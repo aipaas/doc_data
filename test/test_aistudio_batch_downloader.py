@@ -222,6 +222,24 @@ class CatalogTests(unittest.TestCase):
             merged = downloader.merge_saved_catalog(path, current, 26, 1)
         self.assertEqual([entry.dataset_id for entry in merged.entries], [1, 2])
 
+    def test_dataset_id_selection_preserves_requested_order(self):
+        entries = [
+            downloader.DatasetEntry(1, "one", 2, "", "", 1, 1),
+            downloader.DatasetEntry(2, "two", 2, "", "", 1, 1),
+            downloader.DatasetEntry(3, "three", 2, "", "", 1, 1),
+        ]
+        selected = downloader.select_entries_by_ids(entries, (3, 1))
+        self.assertEqual([entry.dataset_id for entry in selected], [3, 1])
+
+    def test_dataset_id_selection_rejects_missing_ids(self):
+        entries = [downloader.DatasetEntry(1, "one", 2, "", "", 1, 1)]
+        with self.assertRaisesRegex(downloader.BatchDownloadError, "2"):
+            downloader.select_entries_by_ids(entries, (1, 2))
+
+    def test_dataset_id_argument_deduplicates_without_reordering(self):
+        args = downloader.parse_args(["--dataset-ids", "3, 1,3"])
+        self.assertEqual(args.dataset_ids, (3, 1))
+
 
 class CommandTests(unittest.TestCase):
     def test_official_cli_command_shape(self):
@@ -355,6 +373,53 @@ class StateTests(unittest.TestCase):
             self.assertIsNone(
                 downloader.should_skip_previous(entry, target, previous, True, False)
             )
+
+    def test_repo_range_error_returns_without_retries(self):
+        entry = downloader.DatasetEntry(1, "one", 2, "owner", "repo", 2, 1)
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            target = root / "owner" / "repo"
+            state = downloader.StateStore(root / "state.json")
+            with patch.object(
+                downloader,
+                "run_streaming_command",
+                return_value=(1, "RequestError: download.fail:416"),
+            ) as run_command:
+                result = downloader.download_repo_dataset(
+                    entry, target, state, ["aistudio"], 3, 5, 0
+                )
+            self.assertEqual(result, "failed")
+            run_command.assert_called_once()
+
+    def test_failed_repo_download_falls_back_to_file_api(self):
+        entry = downloader.DatasetEntry(1, "one", 2, "owner", "repo", 2, 1)
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            target = root / "owner" / "repo"
+            state = downloader.StateStore(root / "state.json")
+            client = object()
+            with (
+                patch.object(
+                    downloader, "download_repo_dataset", return_value="failed"
+                ) as repo_download,
+                patch.object(
+                    downloader, "download_legacy_dataset", return_value="completed"
+                ) as legacy_download,
+            ):
+                result = downloader.download_repo_with_legacy_fallback(
+                    entry,
+                    target,
+                    state,
+                    ["aistudio"],
+                    3,
+                    2,
+                    1.0,
+                    client,
+                    "token",
+                )
+            self.assertEqual(result, "completed")
+            repo_download.assert_called_once()
+            legacy_download.assert_called_once_with(entry, target, state, client, 2)
 
 
 class LegacyDownloadTests(unittest.TestCase):

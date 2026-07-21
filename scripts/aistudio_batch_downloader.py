@@ -56,6 +56,7 @@ PRIVATE_MARKERS = AUTH_MARKERS + (
     "\u79c1\u6709",
     "\u4e0d\u5b58\u5728",
 )
+FILE_API_FALLBACK_MARKERS = ("download.fail:416",)
 
 
 class BatchDownloadError(RuntimeError):
@@ -929,6 +930,17 @@ def download_repo_dataset(
                 error=last_output[-4000:],
             )
             return "skipped_private_or_unavailable"
+        if contains_marker(last_output, FILE_API_FALLBACK_MARKERS):
+            state.record(
+                entry,
+                "failed",
+                kind="repo",
+                target=str(target),
+                return_code=return_code,
+                error=last_output[-4000:],
+            )
+            log("WARN", "Git media endpoint rejected the byte range; switching API.")
+            return "failed"
         if attempt < retries:
             delay = retry_delay * (2**attempt)
             log("WARN", f"CLI failed with exit code {return_code}; retrying in {delay:g}s")
@@ -1055,6 +1067,37 @@ def download_legacy_dataset(
         return "failed"
 
 
+def download_repo_with_legacy_fallback(
+    entry: DatasetEntry,
+    target: Path,
+    state: StateStore,
+    command_prefix: Sequence[str],
+    sdk_workers: int,
+    retries: int,
+    retry_delay: float,
+    client: AiStudioClient,
+    token: str | None,
+) -> str:
+    result = download_repo_dataset(
+        entry,
+        target,
+        state,
+        command_prefix,
+        sdk_workers,
+        retries,
+        retry_delay,
+    )
+    if result != "failed" or not token:
+        return result
+
+    log(
+        "WARN",
+        f"Git download failed for dataset {entry.dataset_id}; "
+        "trying the dataset file API.",
+    )
+    return download_legacy_dataset(entry, target, state, client, retries)
+
+
 def save_catalog(path: Path, catalog: Catalog, args: argparse.Namespace) -> None:
     atomic_write_json(
         path,
@@ -1133,6 +1176,42 @@ def merge_saved_catalog(
     )
 
 
+def parse_dataset_ids(value: str) -> tuple[int, ...]:
+    dataset_ids: list[int] = []
+    seen: set[int] = set()
+    for raw_id in value.split(","):
+        raw_id = raw_id.strip()
+        try:
+            dataset_id = int(raw_id)
+        except ValueError as exc:
+            raise argparse.ArgumentTypeError(
+                "--dataset-ids must be a comma-separated list of positive integers"
+            ) from exc
+        if dataset_id <= 0:
+            raise argparse.ArgumentTypeError(
+                "--dataset-ids must be a comma-separated list of positive integers"
+            )
+        if dataset_id not in seen:
+            dataset_ids.append(dataset_id)
+            seen.add(dataset_id)
+    if not dataset_ids:
+        raise argparse.ArgumentTypeError("--dataset-ids cannot be empty")
+    return tuple(dataset_ids)
+
+
+def select_entries_by_ids(
+    entries: Sequence[DatasetEntry], dataset_ids: Sequence[int]
+) -> list[DatasetEntry]:
+    entries_by_id = {entry.dataset_id: entry for entry in entries}
+    missing = [dataset_id for dataset_id in dataset_ids if dataset_id not in entries_by_id]
+    if missing:
+        missing_text = ", ".join(str(dataset_id) for dataset_id in missing)
+        raise BatchDownloadError(
+            f"Requested dataset ID(s) are absent from the catalog: {missing_text}"
+        )
+    return [entries_by_id[dataset_id] for dataset_id in dataset_ids]
+
+
 def parse_args(argv: Sequence[str] | None = None) -> argparse.Namespace:
     parser = argparse.ArgumentParser(
         description=(
@@ -1173,6 +1252,16 @@ def parse_args(argv: Sequence[str] | None = None) -> argparse.Namespace:
         type=int,
         default=None,
         help="Limit datasets after enumeration, useful for a trial run.",
+    )
+    parser.add_argument(
+        "--dataset-ids",
+        type=parse_dataset_ids,
+        default=None,
+        metavar="ID,ID,...",
+        help=(
+            "Only process these dataset IDs, preserving the supplied order; "
+            "fails if any ID is absent from the catalog."
+        ),
     )
     parser.add_argument(
         "--sdk-workers",
@@ -1293,6 +1382,9 @@ def main(argv: Sequence[str] | None = None) -> int:
         log("INFO", f"Catalog saved: {catalog_path}")
 
         entries = list(catalog.entries)
+        if args.dataset_ids is not None:
+            entries = select_entries_by_ids(entries, args.dataset_ids)
+            log("INFO", f"Dataset ID whitelist selected {len(entries)} dataset(s).")
         if args.max_datasets is not None:
             entries = entries[: args.max_datasets]
         command_prefix = find_aistudio_command()
@@ -1343,7 +1435,7 @@ def main(argv: Sequence[str] | None = None) -> int:
                     "INFO",
                     f"[{index}/{len(entries)}] Git dataset {entry.repo_id} -> {target}",
                 )
-                result = download_repo_dataset(
+                result = download_repo_with_legacy_fallback(
                     entry,
                     target,
                     state,
@@ -1351,6 +1443,8 @@ def main(argv: Sequence[str] | None = None) -> int:
                     args.sdk_workers,
                     args.retries,
                     args.retry_delay,
+                    client,
+                    token,
                 )
             elif args.repo_only:
                 state.record(
