@@ -28,6 +28,7 @@ from modelscope_ocr_catalog import (
 
 
 DEFAULT_ROOT = Path(r"E:\data\doc\modelscope")
+DEFAULT_ENV_PATH = Path(__file__).resolve().parents[1] / ".env"
 STATE_NAME = "modelscope-download-state.json"
 REPORT_NAME = "modelscope-download-status.md"
 CACHE_DIR_NAME = ".modelscope-cache"
@@ -48,6 +49,32 @@ def configure_console() -> None:
 
 def now_iso() -> str:
     return datetime.now().astimezone().isoformat(timespec="seconds")
+
+
+def load_dotenv(path: Path) -> bool:
+    """Load simple KEY=VALUE entries without overriding process environment."""
+    if not path.is_file():
+        return False
+    lines = path.read_text(encoding="utf-8-sig").splitlines()
+    for line_number, raw_line in enumerate(lines, start=1):
+        line = raw_line.strip()
+        if not line or line.startswith("#"):
+            continue
+        if line.startswith("export "):
+            line = line[7:].lstrip()
+        if "=" not in line:
+            raise ValueError(
+                f"Invalid .env entry at {path}:{line_number}; expected KEY=VALUE"
+            )
+        key, value = line.split("=", 1)
+        key = key.strip()
+        value = value.strip()
+        if not re.fullmatch(r"[A-Za-z_][A-Za-z0-9_]*", key):
+            raise ValueError(f"Invalid .env key at {path}:{line_number}")
+        if len(value) >= 2 and value[0] == value[-1] and value[0] in {'"', "'"}:
+            value = value[1:-1]
+        os.environ.setdefault(key, value)
+    return True
 
 
 def human_size(value: int | float) -> str:
@@ -115,13 +142,36 @@ def safe_target(root: Path, record: dict[str, Any]) -> Path:
     return target
 
 
-def selected_records() -> tuple[list[dict[str, Any]], list[dict[str, Any]], dict[str, Any]]:
+def parse_dataset_key(value: str) -> str:
+    key = value.strip()
+    parts = key.split("/")
+    if len(parts) != 2 or not all(parts):
+        raise argparse.ArgumentTypeError(
+            "dataset keys must use the OWNER/NAME format"
+        )
+    return key
+
+
+def selected_records(
+    dataset_keys: list[str] | None = None,
+) -> tuple[list[dict[str, Any]], list[dict[str, Any]], dict[str, Any]]:
     payload = load_or_collect(False)
     selected = [
         record
         for record in payload["datasets"]
         if should_download(record, classify(record))
     ]
+    if dataset_keys:
+        records_by_key = {dataset_key(record): record for record in selected}
+        requested_keys = list(dict.fromkeys(dataset_keys))
+        missing = [key for key in requested_keys if key not in records_by_key]
+        if missing:
+            raise ValueError(
+                "Requested dataset key(s) are not selected for download: "
+                + ", ".join(missing)
+            )
+        return [records_by_key[key] for key in requested_keys], [], payload
+
     excluded = [record for record in selected if dataset_key(record) in GIANT_DOWNLOAD_KEYS]
     targets = [record for record in selected if dataset_key(record) not in GIANT_DOWNLOAD_KEYS]
     return targets, excluded, payload
@@ -270,7 +320,7 @@ def write_report(
 
     summary = status_summary(state)
     summary_text = "；".join(f"{status_labels.get(k, k)} {v} 个" for k, v in sorted(summary.items()))
-    excluded_text = "、".join(f"`{dataset_key(record)}`" for record in excluded)
+    excluded_text = "、".join(f"`{dataset_key(record)}`" for record in excluded) or "无"
     expected_total = sum(int(record.get("StorageSize") or 0) for record in targets)
     lines = [
         "# ModelScope OCR / 文档数据集下载状态",
@@ -381,7 +431,7 @@ def dry_run(root: Path, targets: list[dict[str, Any]], excluded: list[dict[str, 
     print(f"平台标称: {human_size(expected)}；目标目录已有: {human_size(existing)}")
     print(f"磁盘可用: {human_size(free)}；保留空间: {human_size(reserve)}")
     print(f"估算下载后可用: {human_size(max(0, free - remaining))}")
-    print("排除: " + ", ".join(dataset_key(record) for record in excluded))
+    print("排除: " + (", ".join(dataset_key(record) for record in excluded) or "无"))
     if free < remaining + reserve:
         print("预检失败：按平台标称量和保留空间计算，磁盘不足。")
         return 2
@@ -392,6 +442,7 @@ def dry_run(root: Path, targets: list[dict[str, Any]], excluded: list[dict[str, 
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--root", type=Path, default=DEFAULT_ROOT)
+    parser.add_argument("--env-file", type=Path, default=DEFAULT_ENV_PATH)
     parser.add_argument("--dry-run", action="store_true")
     parser.add_argument("--max-workers", type=int, default=DEFAULT_WORKERS)
     parser.add_argument("--retries", type=int, default=2, help="Retries after the first attempt.")
@@ -399,6 +450,17 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--reserve-gib", type=float, default=DEFAULT_RESERVE_GIB)
     parser.add_argument("--retry-access", action="store_true")
     parser.add_argument("--verify-completed", action="store_true")
+    parser.add_argument(
+        "--dataset-key",
+        action="append",
+        type=parse_dataset_key,
+        dest="dataset_keys",
+        metavar="OWNER/NAME",
+        help=(
+            "Only process this selected dataset; repeat for multiple datasets. "
+            "Explicit selection can include repositories excluded from the default giant batch."
+        ),
+    )
     args = parser.parse_args()
     if args.max_workers < 1 or args.retries < 0 or args.retry_delay < 0 or args.reserve_gib < 0:
         parser.error("workers must be positive; retries, delay and reserve cannot be negative")
@@ -408,7 +470,7 @@ def parse_args() -> argparse.Namespace:
 def run(args: argparse.Namespace) -> int:
     configure_console()
     root = args.root.resolve(strict=False)
-    targets, excluded, payload = selected_records()
+    targets, excluded, payload = selected_records(args.dataset_keys)
     reserve = math.ceil(args.reserve_gib * 1024**3)
 
     if not root.exists():
@@ -425,6 +487,7 @@ def run(args: argparse.Namespace) -> int:
     cache_dir = root / CACHE_DIR_NAME
     cache_dir.mkdir(exist_ok=True)
     logger, log_path = make_logger(root)
+    load_dotenv(args.env_file)
     token = os.getenv("MODELSCOPE_API_TOKEN") or os.getenv("MODELSCOPE_TOKEN")
 
     from modelscope.hub.snapshot_download import dataset_snapshot_download

@@ -21,14 +21,22 @@ SOURCE_URL = (
     "https://www.modelscope.cn/datasets?"
     "Tags=image-to-text&dataType=image&page=1"
 )
+ANYOCR_COLLECTION_URL = (
+    "https://www.modelscope.cn/collections/AnyOCR-4987429313b046"
+)
+ANYOCR_COLLECTION_DATASET_COUNT = 17
 LIST_API = "https://www.modelscope.cn/api/v1/dolphin/datasets"
 DETAIL_API = "https://www.modelscope.cn/api/v1/datasets/{owner}/{name}"
-CACHE_PATH = Path(__file__).with_name(".modelscope_ocr_cache.json")
+DATA_SOURCES_DIR = Path(__file__).resolve().parents[1] / "data_sources"
+CACHE_PATH = DATA_SOURCES_DIR / ".modelscope_ocr_cache.json"
+DEFAULT_OUTPUT_PATH = DATA_SOURCES_DIR / "modelscope数据集OCR.md"
 DOWNLOAD_STATE_PATH = Path(r"E:\data\doc\modelscope\modelscope-download-state.json")
 PAGE_SIZE = 30
 
 
-# Explicitly requested in addition to the image-to-text filtered page.
+# AnyOCR contains 17 datasets. Three already occur in the image-to-text result;
+# these 14 records complete the union, including the previously requested
+# Layout-Instruction-Data dataset.
 SUPPLEMENTAL_DATASETS = [
     {
         "Owner": "iic",
@@ -47,6 +55,202 @@ SUPPLEMENTAL_DATASETS = [
         ),
         "WebUrl": "https://www.modelscope.cn/datasets/iic/Layout-Instruction-Data",
         "Supplemental": True,
+        "SupplementalSource": "AnyOCR",
+    },
+    {
+        "Owner": "VirtualLUO",
+        "Name": "Chronicles-OCR",
+        "ChineseName": "Chronicles-OCR 古文字跨时代评测集",
+        "License": "Apache License 2.0",
+        "Description": "覆盖汉字七种书体演变的跨时代视觉感知评测集。",
+        "UserDefineTags": "OCR,Chinese scripts,benchmark",
+        "StorageSize": 1_320_573_834,
+        "ApprovalMode": 1,
+        "ProtectedMode": 2,
+        "ReadmeContent": "2,800 balanced images spanning the Seven Chinese Scripts.",
+        "WebUrl": "https://www.modelscope.cn/datasets/VirtualLUO/Chronicles-OCR",
+        "Supplemental": True,
+        "SupplementalSource": "AnyOCR",
+    },
+    {
+        "Owner": "nv-community",
+        "Name": "OCR-Synthetic-Multilingual-v1",
+        "ChineseName": "NVIDIA 多语言合成 OCR 数据集",
+        "License": "cc-by-4.0",
+        "Description": "面向多语言文字检测与识别的大规模 SynthDoG 合成数据。",
+        "UserDefineTags": "synthetic-data,hdf5,text-detection,ocr,text-recognition",
+        "StorageSize": 5_448_080_361_912,
+        "ApprovalMode": 1,
+        "ProtectedMode": 2,
+        "ReadmeContent": "12,258,146 samples in six languages with word, line, and paragraph annotations.",
+        "WebUrl": "https://www.modelscope.cn/datasets/nv-community/OCR-Synthetic-Multilingual-v1",
+        "Supplemental": True,
+        "SupplementalSource": "AnyOCR",
+    },
+    {
+        "Owner": "kevin726",
+        "Name": "hy_202504_ocr_data",
+        "ChineseName": "hy_202504 OCR 数据",
+        "License": "Apache License 2.0",
+        "Description": "AnyOCR 合集收录的大型 OCR 仓库，数据卡未提供有效说明。",
+        "UserDefineTags": "OCR",
+        "StorageSize": 299_432_725_476,
+        "ApprovalMode": None,
+        "ProtectedMode": 2,
+        "ReadmeContent": "Default dataset card; inspect files and samples after download.",
+        "WebUrl": "https://www.modelscope.cn/datasets/kevin726/hy_202504_ocr_data",
+        "Supplemental": True,
+        "SupplementalSource": "AnyOCR",
+    },
+    {
+        "Owner": "DaoCloud",
+        "Name": "daocloud-datasets",
+        "ChineseName": "DaoCloud 文档微调数据集",
+        "License": "Apache License 2.0",
+        "Description": "使用 DeepSeek 模型蒸馏得到的 DaoCloud 文档微调数据。",
+        "UserDefineTags": "kubernetes,daocloud,document",
+        "StorageSize": 83_653_157,
+        "ApprovalMode": None,
+        "ProtectedMode": 2,
+        "ReadmeContent": "DaoCloud documentation fine-tuning data distilled with DeepSeek.",
+        "WebUrl": "https://www.modelscope.cn/datasets/DaoCloud/daocloud-datasets",
+        "Supplemental": True,
+        "SupplementalSource": "AnyOCR",
+    },
+    {
+        "Owner": "iic",
+        "Name": "MP-DocStruct1M",
+        "ChineseName": "MP-DocStruct1M 多页文档理解数据集",
+        "License": "Apache License 2.0",
+        "Description": "DocOwl2 多页文档理解预训练数据，包含解析和页码查找任务。",
+        "UserDefineTags": "Document Understanding,OCR,multi-page",
+        "StorageSize": 108_930_998_187,
+        "ApprovalMode": None,
+        "ProtectedMode": 2,
+        "ReadmeContent": "One million multi-page document parsing and page retrieval samples.",
+        "WebUrl": "https://www.modelscope.cn/datasets/iic/MP-DocStruct1M",
+        "Supplemental": True,
+        "SupplementalSource": "AnyOCR",
+    },
+    {
+        "Owner": "iic",
+        "Name": "DocStruct4M",
+        "ChineseName": "DocStruct4M",
+        "License": "Apache License 2.0",
+        "Description": "包含文档、网页、表格、图表和自然图的统一文档结构学习数据。",
+        "UserDefineTags": "文字识别和定位,4M,文档图片解析",
+        "StorageSize": 338_883_088_410,
+        "ApprovalMode": None,
+        "ProtectedMode": 2,
+        "ReadmeContent": "Three million structured parsing and one million text localization/recognition samples.",
+        "WebUrl": "https://www.modelscope.cn/datasets/iic/DocStruct4M",
+        "Supplemental": True,
+        "SupplementalSource": "AnyOCR",
+    },
+    {
+        "Owner": "iic",
+        "Name": "D4LA",
+        "ChineseName": "D4LA 版面分析数据集",
+        "License": "Apache License 2.0",
+        "Description": "覆盖多类文档与细粒度版面元素的文档版面分析数据集。",
+        "UserDefineTags": "Document Layout Analysis,Document AI,OCR",
+        "StorageSize": 1_387_984_290,
+        "ApprovalMode": None,
+        "ProtectedMode": 2,
+        "ReadmeContent": "11,092 document pages across 12 document categories and 27 layout categories.",
+        "WebUrl": "https://www.modelscope.cn/datasets/iic/D4LA",
+        "Supplemental": True,
+        "SupplementalSource": "AnyOCR",
+    },
+    {
+        "Owner": "racineai",
+        "Name": "ocr-pdf-degraded",
+        "ChineseName": "OCR-PDF-Degraded",
+        "License": "apache-2.0",
+        "Description": "合成退化文档图像与对应 OCR 真值文本。",
+        "UserDefineTags": "OCR,PDF,degraded documents",
+        "StorageSize": 2_688_759_806,
+        "ApprovalMode": None,
+        "ProtectedMode": 2,
+        "ReadmeContent": "Synthetically degraded document images paired with OCR ground truth.",
+        "WebUrl": "https://www.modelscope.cn/datasets/racineai/ocr-pdf-degraded",
+        "Supplemental": True,
+        "SupplementalSource": "AnyOCR",
+    },
+    {
+        "Owner": "prithivMLmods",
+        "Name": "Corvus-OCR-Caption-Mini-Mix",
+        "ChineseName": "Corvus OCR Caption Mini Mix",
+        "License": "apache-2.0",
+        "Description": "混合 OCR、科学文档、数学内容与长描述的图文训练集。",
+        "UserDefineTags": "image,document,caption,OCR,LaTeX",
+        "StorageSize": 850_300_911,
+        "ApprovalMode": None,
+        "ProtectedMode": 2,
+        "ReadmeContent": "A compact English/Chinese image-caption mix with OCR-heavy samples.",
+        "WebUrl": "https://www.modelscope.cn/datasets/prithivMLmods/Corvus-OCR-Caption-Mini-Mix",
+        "Supplemental": True,
+        "SupplementalSource": "AnyOCR",
+    },
+    {
+        "Owner": "allenai",
+        "Name": "olmOCR-mix-0225",
+        "ChineseName": "olmOCR Mix 0225",
+        "License": "Apache License 2.0",
+        "Description": "PDF 页面及按自然阅读顺序生成的纯文本 OCR 训练数据。",
+        "UserDefineTags": "OCR,PDF,document parsing",
+        "StorageSize": 56_055_609_869,
+        "ApprovalMode": None,
+        "ProtectedMode": 2,
+        "ReadmeContent": "266,135 pages from 105,504 documents, OCRed with GPT-4o.",
+        "WebUrl": "https://www.modelscope.cn/datasets/allenai/olmOCR-mix-0225",
+        "Supplemental": True,
+        "SupplementalSource": "AnyOCR",
+    },
+    {
+        "Owner": "ChatDOC",
+        "Name": "OCRFlux-bench-single",
+        "ChineseName": "OCRFlux 单页文档解析评测集",
+        "License": "Apache License 2.0",
+        "Description": "中英文 PDF 页面与人工复核 Markdown 真值的单页解析评测集。",
+        "UserDefineTags": "OCR,PDF,benchmark,Markdown",
+        "StorageSize": 661_076_030,
+        "ApprovalMode": None,
+        "ProtectedMode": 2,
+        "ReadmeContent": "2,000 PDF pages: 1,000 Chinese and 1,000 English.",
+        "WebUrl": "https://www.modelscope.cn/datasets/ChatDOC/OCRFlux-bench-single",
+        "Supplemental": True,
+        "SupplementalSource": "AnyOCR",
+    },
+    {
+        "Owner": "ChatDOC",
+        "Name": "OCRFlux-pubtabnet-single",
+        "ChineseName": "OCRFlux PubTabNet 表格解析评测集",
+        "License": "Apache License 2.0",
+        "Description": "PubTabNet 表格图像及转换后的 HTML 真值。",
+        "UserDefineTags": "OCR,table,benchmark,HTML",
+        "StorageSize": 202_639_953,
+        "ApprovalMode": None,
+        "ProtectedMode": 2,
+        "ReadmeContent": "9,064 table images: 4,623 simple and 4,441 complex tables.",
+        "WebUrl": "https://www.modelscope.cn/datasets/ChatDOC/OCRFlux-pubtabnet-single",
+        "Supplemental": True,
+        "SupplementalSource": "AnyOCR",
+    },
+    {
+        "Owner": "AI-ModelScope",
+        "Name": "LaTeX_OCR",
+        "ChineseName": "LaTeX OCR 数据集",
+        "License": "Apache License 2.0",
+        "Description": "印刷体、合成手写和真实手写数学公式图像及 LaTeX 标注。",
+        "UserDefineTags": "OCR,LaTeX,formula,handwriting",
+        "StorageSize": 1_110_020_241,
+        "ApprovalMode": None,
+        "ProtectedMode": 2,
+        "ReadmeContent": "Five formula OCR subsets including about 100k printed and 100k synthetic handwritten samples.",
+        "WebUrl": "https://www.modelscope.cn/datasets/AI-ModelScope/LaTeX_OCR",
+        "Supplemental": True,
+        "SupplementalSource": "AnyOCR",
     }
 ]
 
@@ -57,6 +261,19 @@ LOCAL_REUSE_KEYS = {"iic/Layout-Instruction-Data"}
 
 TYPE_OVERRIDES = {
     "iic/Layout-Instruction-Data": "文档｜理解/指令微调",
+    "VirtualLUO/Chronicles-OCR": "OCR｜手写文字",
+    "nv-community/OCR-Synthetic-Multilingual-v1": "OCR｜场景文字",
+    "kevin726/hy_202504_ocr_data": "OCR｜信息不足",
+    "DaoCloud/daocloud-datasets": "文档｜理解/指令微调",
+    "iic/MP-DocStruct1M": "文档｜预训练语料",
+    "iic/DocStruct4M": "文档｜预训练语料",
+    "iic/D4LA": "文档｜版面分析",
+    "racineai/ocr-pdf-degraded": "OCR｜场景文字",
+    "prithivMLmods/Corvus-OCR-Caption-Mini-Mix": "多模态｜图文/VQA",
+    "allenai/olmOCR-mix-0225": "文档｜预训练语料",
+    "ChatDOC/OCRFlux-bench-single": "评测｜OCR/文档",
+    "ChatDOC/OCRFlux-pubtabnet-single": "OCR｜表格/公式",
+    "AI-ModelScope/LaTeX_OCR": "OCR｜表格/公式",
     "WIRD9090/ocr_plate": "OCR｜票据/专用",
     "Qwen/CC-OCR": "评测｜OCR/文档",
     "iic/ICDAR13_HCTR_Dataset": "OCR｜手写文字",
@@ -97,6 +314,19 @@ TYPE_OVERRIDES = {
 
 QUANTITY_OVERRIDES = {
     "iic/Layout-Instruction-Data": "116,000条预训练描述 + 300,000条SFT指令",
+    "VirtualLUO/Chronicles-OCR": "2,800张 / 汉字七种书体",
+    "nv-community/OCR-Synthetic-Multilingual-v1": "12,258,146条 / 6种语言",
+    "kevin726/hy_202504_ocr_data": "README未说明",
+    "DaoCloud/daocloud-datasets": "README未说明",
+    "iic/MP-DocStruct1M": "约1,000,000条多页文档样本",
+    "iic/DocStruct4M": "约4,000,000条（解析3M+文字定位/识别1M）",
+    "iic/D4LA": "11,092页 / 12类文档 / 27类版面元素",
+    "racineai/ocr-pdf-degraded": "README未说明",
+    "prithivMLmods/Corvus-OCR-Caption-Mini-Mix": "README未说明（仅train划分）",
+    "allenai/olmOCR-mix-0225": "105,504文档 / 266,135页",
+    "ChatDOC/OCRFlux-bench-single": "2,000页（中英文各1,000页）",
+    "ChatDOC/OCRFlux-pubtabnet-single": "9,064张表格图",
+    "AI-ModelScope/LaTeX_OCR": "5个子集；印刷体约10万+合成手写约10万+真实手写",
     "WIRD9090/ocr_plate": "约410,000张（训练37万+验证4万）",
     "Qwen/CC-OCR": "7,058张 / 39个子集",
     "iic/ICDAR13_HCTR_Dataset": "3,432张",
@@ -152,6 +382,19 @@ QUANTITY_OVERRIDES = {
 
 INTRO_OVERRIDES = {
     "iic/Layout-Instruction-Data": "LayoutLLM文档理解语料，含文档图、OCR结果、版式预训练描述、带/不带LayoutCoT的SFT指令及CORD/FUNSD/SROIE评测数据。",
+    "VirtualLUO/Chronicles-OCR": "面向甲骨文至现代书体演变的跨时代中文视觉感知评测集，2,800张图按汉字七种书体严格平衡。",
+    "nv-community/OCR-Synthetic-Multilingual-v1": "NVIDIA基于扩展SynthDoG生成的六语种OCR训练集，HDF5内含图像、词/行/段框、四边形和阅读顺序图。",
+    "kevin726/hy_202504_ocr_data": "AnyOCR收录的278.87 GiB大型OCR仓库，但数据卡仍是默认模板，任务、标注和来源均需下载后抽检。",
+    "DaoCloud/daocloud-datasets": "使用DeepSeek蒸馏得到的DaoCloud文档微调数据；更接近文档问答/知识微调，因AnyOCR收录而列为必下。",
+    "iic/MP-DocStruct1M": "DocOwl2多页文档理解预训练集，覆盖多页文字解析和根据文字查找页码两类任务。",
+    "iic/DocStruct4M": "DocOwl1.5统一文档结构学习数据，覆盖文档、网页、表格、图表和自然图，含解析及多粒度文字定位/识别。",
+    "iic/D4LA": "细粒度文档版面分析数据，覆盖12类文档与27类版面元素，提供图像、检测JSON及VGT网格特征。",
+    "racineai/ocr-pdf-degraded": "由干净PDF页面合成透视、模糊、亮度、对比度和JPEG退化，并配对OCR真值与退化参数。",
+    "prithivMLmods/Corvus-OCR-Caption-Mini-Mix": "英中图文混合集，兼有自然图长描述、OCR密集科学/数学/文档样本及LaTeX内容。",
+    "allenai/olmOCR-mix-0225": "网页PDF和Internet Archive图书页面，经GPT-4o按自然阅读顺序生成纯文本，可训练或评估文档OCR管线。",
+    "ChatDOC/OCRFlux-bench-single": "人工多轮复核的中英文PDF页面与Markdown真值，用于单页OCR和版面解析评测。",
+    "ChatDOC/OCRFlux-pubtabnet-single": "由PubTabNet转换得到的表格图与HTML真值，覆盖简单表格和含跨行/跨列单元格的复杂表格。",
+    "AI-ModelScope/LaTeX_OCR": "来自公开公式资源和自建数据的五个公式OCR子集，覆盖印刷体、合成手写、真实手写及对应印刷版本。",
     "WIRD9090/ocr_plate": "车牌识别训练/验证集；页面声称约41万张，但仓库实际只有JSON和README。",
     "Qwen/CC-OCR": "覆盖场景文字、多语言、文档解析和KIE的综合OCR评测集，附VLMEvalKit用TSV。",
     "iic/ICDAR13_HCTR_Dataset": "ICDAR 2013中文手写文本识别公开评测集；仓库主要是CSV索引。",
@@ -197,6 +440,19 @@ INTRO_OVERRIDES = {
 
 RECOMMENDATION_OVERRIDES = {
     "iic/Layout-Instruction-Data": "下载：本地已有26.37 GiB仓库；哈希校验后直接复用",
+    "VirtualLUO/Chronicles-OCR": "必下（AnyOCR新增）：古文字跨时代OCR评测；需申请访问",
+    "nv-community/OCR-Synthetic-Multilingual-v1": "必下（AnyOCR新增），本轮暂缓：六语种合成OCR；4.96 TiB且需申请访问",
+    "kevin726/hy_202504_ocr_data": "必下（AnyOCR新增）：先抽检任务、来源和标注；278.87 GiB独立批次",
+    "DaoCloud/daocloud-datasets": "必下（AnyOCR新增）：文档微调数据；核对是否包含图像/OCR字段",
+    "iic/MP-DocStruct1M": "必下（AnyOCR新增），本地已有：无需重复下载",
+    "iic/DocStruct4M": "必下（AnyOCR新增），本地已有：无需重复下载",
+    "iic/D4LA": "必下（AnyOCR新增）：版面分析训练与评测",
+    "racineai/ocr-pdf-degraded": "必下（AnyOCR新增）：退化文档鲁棒OCR训练与评测",
+    "prithivMLmods/Corvus-OCR-Caption-Mini-Mix": "必下（AnyOCR新增）：OCR密集图文预训练；注意其同时含普通长描述样本",
+    "allenai/olmOCR-mix-0225": "必下（AnyOCR新增），本地已有：无需重复下载",
+    "ChatDOC/OCRFlux-bench-single": "必下（AnyOCR新增）：中英文单页文档解析评测",
+    "ChatDOC/OCRFlux-pubtabnet-single": "必下（AnyOCR新增）：表格图到HTML解析评测",
+    "AI-ModelScope/LaTeX_OCR": "必下（AnyOCR新增）：印刷体与手写公式OCR",
     "WIRD9090/ocr_plate": "下载：仓库仅索引，原图需另找上游",
     "Qwen/CC-OCR": "下载：综合OCR/文档评测",
     "iic/ICDAR13_HCTR_Dataset": "下载：作为ICDAR备份；先验证索引原图",
@@ -235,10 +491,40 @@ METADATA_ONLY = {
 }
 
 
+ANYOCR_NEW_KEYS = {
+    "VirtualLUO/Chronicles-OCR",
+    "nv-community/OCR-Synthetic-Multilingual-v1",
+    "kevin726/hy_202504_ocr_data",
+    "DaoCloud/daocloud-datasets",
+    "iic/MP-DocStruct1M",
+    "iic/DocStruct4M",
+    "iic/D4LA",
+    "racineai/ocr-pdf-degraded",
+    "prithivMLmods/Corvus-OCR-Caption-Mini-Mix",
+    "allenai/olmOCR-mix-0225",
+    "ChatDOC/OCRFlux-bench-single",
+    "ChatDOC/OCRFlux-pubtabnet-single",
+    "AI-ModelScope/LaTeX_OCR",
+}
+
+
+ANYOCR_LOCAL_REUSE_KEYS = {
+    "iic/MP-DocStruct1M",
+    "iic/DocStruct4M",
+    "allenai/olmOCR-mix-0225",
+}
+
+
+ANYOCR_DEFERRED_KEYS = {
+    "nv-community/OCR-Synthetic-Multilingual-v1",
+}
+
+
 EXTRA_DOWNLOAD_KEYS = {
     "Kpillow/SceneVTG-Erase",
     "DatatangBeijing/20011ImageCaptionDataOfOCRInNaturalScenes",
     "wuwuwuwuwuwuwuwu/ocr_demo",
+    *ANYOCR_NEW_KEYS,
 }
 
 
@@ -246,6 +532,11 @@ GIANT_DOWNLOAD_KEYS = {
     "Kpillow/SceneVTG-Erase",
     "AI-ModelScope/idl-wds",
     "AI-ModelScope/pdfa-eng-wds",
+    "nv-community/OCR-Synthetic-Multilingual-v1",
+    "kevin726/hy_202504_ocr_data",
+    "iic/MP-DocStruct1M",
+    "iic/DocStruct4M",
+    "allenai/olmOCR-mix-0225",
 }
 
 
@@ -636,28 +927,70 @@ def render_markdown(payload: dict[str, Any], output_path: Path) -> None:
     supplemental_count = analyzed_total - int(payload["reported_total"])
     new_direct_bytes = selected_direct_without_giants - selected_local_reuse_size
     new_transfer_bytes = new_direct_bytes + selected_commercial_page_size
+    anyocr_new_records = [
+        record
+        for record in payload["datasets"]
+        if dataset_key(record) in ANYOCR_NEW_KEYS
+    ]
+    anyocr_new_size = sum(
+        int(record.get("StorageSize") or 0) for record in anyocr_new_records
+    )
+    anyocr_largest_key = "nv-community/OCR-Synthetic-Multilingual-v1"
+    anyocr_largest_size = next(
+        int(record.get("StorageSize") or 0)
+        for record in anyocr_new_records
+        if dataset_key(record) == anyocr_largest_key
+    )
+    anyocr_current_batch_records = [
+        record
+        for record in anyocr_new_records
+        if dataset_key(record)
+        not in ANYOCR_LOCAL_REUSE_KEYS | ANYOCR_DEFERRED_KEYS
+    ]
+    anyocr_current_batch_size = sum(
+        int(record.get("StorageSize") or 0)
+        for record in anyocr_current_batch_records
+    )
+    anyocr_local_names = "、".join(
+        f"`{key}`" for key in sorted(ANYOCR_LOCAL_REUSE_KEYS)
+    )
+    anyocr_deferred_names = "、".join(
+        f"`{key}`" for key in sorted(ANYOCR_DEFERRED_KEYS)
+    )
+    giant_pending_keys = GIANT_DOWNLOAD_KEYS - ANYOCR_LOCAL_REUSE_KEYS
+    giant_pending_size = sum(
+        int(record.get("StorageSize") or 0)
+        for record in payload["datasets"]
+        if dataset_key(record) in giant_pending_keys
+    )
+    giant_names = "、".join(f"`{key}`" for key in sorted(giant_pending_keys))
+    giant_local_names = "、".join(
+        f"`{key}`" for key in sorted(ANYOCR_LOCAL_REUSE_KEYS)
+    )
     lines = [
         "# ModelScope 数据集 OCR / 文档识别筛选分析",
         "",
-        f"> 抓取日期：{today}。来源：[ModelScope 筛选页]({payload['source_url']})。",
+        f"> 抓取日期：{today}。来源：[ModelScope 筛选页]({payload['source_url']})；[AnyOCR 合集]({ANYOCR_COLLECTION_URL})。",
         "",
         "## 口径与结论",
         "",
-        f"- 当前筛选接口返回 **{payload['reported_total']} 个**数据集；另按用户要求补充 **{supplemental_count} 个**，共分析 **{analyzed_total} 个**。这与“180多个”的页面印象不一致，筛选部分以抓取日接口返回的完整分页结果为准。",
+        f"- 当前筛选接口返回 **{payload['reported_total']} 个**数据集；AnyOCR 合集含 **{ANYOCR_COLLECTION_DATASET_COUNT} 个**数据集，其中原报告已有 4 个，本次新增 **{len(anyocr_new_records)} 个必下项**。与筛选结果去重后共分析 **{analyzed_total} 个**（补充 {supplemental_count} 个）。",
         f"- 类型统计：{distribution}。标签 `image-to-text` 存在明显误标，语音、噪声、视频、纯文本和普通视觉数据均被混入。",
-        "- 下载原则：凡是 OCR、文档解析/识别、图像文字信息提取、含文档图，或提供 PDF/TIFF 等原始文档的条目均下载；商业、受控、索引型和超大规模只影响获取方式与批次，不影响入选。",
+        "- 下载原则：凡是 OCR、文档解析/识别、图像文字信息提取、含文档图，或提供 PDF/TIFF 等原始文档的条目均下载；AnyOCR 合集本次新增的 13 项按用户要求全部列为必下。商业、受控、索引型和超大规模只影响获取方式与批次，不影响入选。",
         f"- 按此原则应下载 **{selected_count} 个**，不下载 **{analyzed_total - selected_count} 个**。入选页面仓库合计 **{human_size(selected_repo_size)}**；其中可直接访问或申请访问的 {selected_direct_count} 个仓库合计 **{human_size(selected_direct_size)}**。",
-        f"- 排除 IDL、PDFA、SceneVTG-Erase 后，其余非商业入选仓库合计 **{human_size(selected_direct_without_giants)}**。其中 `iic/Layout-Instruction-Data` 的 **{human_size(selected_local_reuse_size)}** 已在目标盘，校验后复用；加上商业页面样例，本次预计新增传输 **{human_size(new_transfer_bytes)}**，按1.2倍预留 **{human_size(math.ceil(new_transfer_bytes * 1.2))}**。",
-        f"- 三个暂缓超大仓库本身合计 **{human_size(selected_giant_size)}**，按1.2倍预留 **{human_size(math.ceil(selected_giant_size * 1.2))}**。全部 {analyzed_total} 个已分析页面仓库合计 **{human_size(all_size)}**。",
+        f"- 排除 {len(GIANT_DOWNLOAD_KEYS)} 个超大仓库后，其余非商业入选仓库合计 **{human_size(selected_direct_without_giants)}**。其中 `iic/Layout-Instruction-Data` 的 **{human_size(selected_local_reuse_size)}** 已在目标盘，校验后复用；加上商业页面样例，普通批次预计新增传输 **{human_size(new_transfer_bytes)}**，按1.2倍预留 **{human_size(math.ceil(new_transfer_bytes * 1.2))}**。",
+        f"- {len(GIANT_DOWNLOAD_KEYS)} 个超大仓库本身合计 **{human_size(selected_giant_size)}**，按1.2倍预留 **{human_size(math.ceil(selected_giant_size * 1.2))}**。全部 {analyzed_total} 个已分析页面仓库合计 **{human_size(all_size)}**。",
+        f"- AnyOCR 新增 {len(anyocr_new_records)} 个仓库合计 **{human_size(anyocr_new_size)}**；其中 `{anyocr_largest_key}` 单项 **{human_size(anyocr_largest_size)}**，其余 12 项仍有 **{human_size(anyocr_new_size - anyocr_largest_size)}**。G 盘总容量 447.12 GiB、检查时可用 113.93 GiB，即使清空也无法容纳这 13 项。",
+        f"- 本轮执行：{anyocr_deferred_names} 暂不下载；{anyocr_local_names} 已在本地，无需重复下载；其余 {len(anyocr_current_batch_records)} 项下载至 `F:\\modelscope`，平台标称合计 **{human_size(anyocr_current_batch_size)}**。",
         f"- 入选的 {selected_commercial_count} 个数据堂/云市场条目当前页面仓库仅合计 **{human_size(selected_commercial_page_size)}**，但这通常只是展示文件或样例，完整商业数据的真实大小未公开。",
         "- “文件大小”来自详情接口的仓库存储量，不等于解压后占用。标为“元数据/索引”的条目可能在加载时继续下载外部图片；数据堂和云市场条目通常只存展示文件或样例，**完整商业数据的真实大小未公开，不能据此做全量硬盘预算**。",
         "- 商业条目页面即使显示 Apache-2.0，也同时在 README 声明“商用数据/版权归数据堂”，因此表中按更保守的商业获取口径处理。",
         "",
         "## 建议下载顺序",
         "",
-        f"1. 第一批：校验复用 `iic/Layout-Instruction-Data`，再下载其余 {selected_direct_count - len(GIANT_DOWNLOAD_KEYS) - len(LOCAL_REUSE_KEYS)} 个非商业入选仓库，预计新增 **{human_size(new_direct_bytes)}**。其中索引型条目加载后可能继续拉取原图，MaritimeOCRBench 与 OCR-KIE 需申请。",
+        f"1. 第一批：校验复用 `iic/Layout-Instruction-Data`，再下载其余 {selected_direct_count - len(GIANT_DOWNLOAD_KEYS) - len(LOCAL_REUSE_KEYS)} 个非商业普通规模入选仓库，预计新增 **{human_size(new_direct_bytes)}**。其中索引型条目加载后可能继续拉取原图；受控仓库需先完成申请。",
         f"2. 第二批：获取 {selected_commercial_count} 个数据堂/云市场入选条目的样例并逐一询价/提交需求；页面样例仓库合计 **{human_size(selected_commercial_page_size)}**，不能代表全量。",
-        f"3. 第三批：下载 IDL、PDFA、SceneVTG-Erase，仓库合计 **{human_size(selected_giant_size)}**。这三项仍属于必下范围，但应独立安排磁盘、带宽、解压空间和许可审查。",
+        f"3. 第三批：对尚未持有的超大仓库逐项安排 {giant_names}，仓库合计 **{human_size(giant_pending_size)}**；{giant_local_names} 已持有，无需重复下载。其余项目仍须分别安排磁盘、带宽、解压空间、访问申请和许可审查。",
         f"4. 其余 {analyzed_total - selected_count} 个语音、噪声、视频、普通图像/图文、视觉问答和纯文本条目不下载。",
         "",
         *download_execution_lines(),
@@ -713,7 +1046,7 @@ def main() -> None:
     parser.add_argument(
         "--output",
         type=Path,
-        default=Path(__file__).with_name("modelscope数据集OCR.md"),
+        default=DEFAULT_OUTPUT_PATH,
     )
     args = parser.parse_args()
     payload = load_or_collect(args.refresh)

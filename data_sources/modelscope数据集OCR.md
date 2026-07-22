@@ -1,35 +1,27 @@
 # ModelScope 数据集 OCR / 文档识别筛选分析
 
-> 抓取日期：2026-07-21。来源：[ModelScope 筛选页](https://www.modelscope.cn/datasets?Tags=image-to-text&dataType=image&page=1)。
+> 抓取日期：2026-07-23。来源：[ModelScope 筛选页](https://www.modelscope.cn/datasets?Tags=image-to-text&dataType=image&page=1)；[AnyOCR 合集](https://www.modelscope.cn/collections/AnyOCR-4987429313b046)。
 
 ## 口径与结论
 
-- 当前筛选接口返回 **108 个**数据集；另按用户要求补充 **1 个**，共分析 **109 个**。这与“180多个”的页面印象不一致，筛选部分以抓取日接口返回的完整分页结果为准。
-- 类型统计：OCR｜场景文字 19个；OCR｜手写文字 11个；OCR｜文本检测 1个；OCR｜票据/专用 6个；OCR｜表格/公式 5个；其他｜信息不足 1个；多模态｜图文/VQA 8个；文本｜NLP/LLM 2个；文档｜图像/试卷 1个；文档｜理解/指令微调 1个；文档｜解析/KIE 2个；文档｜预训练语料 2个；视觉｜其他 4个；视觉｜文字生成/擦除 1个；视频｜生成/理解 2个；评测｜OCR/文档 2个；语音｜ASR 31个；语音｜TTS 6个；音频｜噪声 4个。标签 `image-to-text` 存在明显误标，语音、噪声、视频、纯文本和普通视觉数据均被混入。
-- 下载原则：凡是 OCR、文档解析/识别、图像文字信息提取、含文档图，或提供 PDF/TIFF 等原始文档的条目均下载；商业、受控、索引型和超大规模只影响获取方式与批次，不影响入选。
-- 按此原则应下载 **53 个**，不下载 **56 个**。入选页面仓库合计 **4.15 TiB**；其中可直接访问或申请访问的 24 个仓库合计 **4.15 TiB**。
-- 排除 IDL、PDFA、SceneVTG-Erase 后，其余非商业入选仓库合计 **33.56 GiB**。其中 `iic/Layout-Instruction-Data` 的 **26.37 GiB** 已在目标盘，校验后复用；加上商业页面样例，本次预计新增传输 **7.93 GiB**，按1.2倍预留 **9.52 GiB**。
-- 三个暂缓超大仓库本身合计 **4.11 TiB**，按1.2倍预留 **4.94 TiB**。全部 109 个已分析页面仓库合计 **4.21 TiB**。
+- 当前筛选接口返回 **108 个**数据集；AnyOCR 合集含 **17 个**数据集，其中原报告已有 4 个，本次新增 **13 个必下项**。与筛选结果去重后共分析 **122 个**（补充 14 个）。
+- 类型统计：OCR｜信息不足 1个；OCR｜场景文字 21个；OCR｜手写文字 12个；OCR｜文本检测 1个；OCR｜票据/专用 6个；OCR｜表格/公式 7个；其他｜信息不足 1个；多模态｜图文/VQA 9个；文本｜NLP/LLM 2个；文档｜图像/试卷 1个；文档｜版面分析 1个；文档｜理解/指令微调 2个；文档｜解析/KIE 2个；文档｜预训练语料 5个；视觉｜其他 4个；视觉｜文字生成/擦除 1个；视频｜生成/理解 2个；评测｜OCR/文档 3个；语音｜ASR 31个；语音｜TTS 6个；音频｜噪声 4个。标签 `image-to-text` 存在明显误标，语音、噪声、视频、纯文本和普通视觉数据均被混入。
+- 下载原则：凡是 OCR、文档解析/识别、图像文字信息提取、含文档图，或提供 PDF/TIFF 等原始文档的条目均下载；AnyOCR 合集本次新增的 13 项按用户要求全部列为必下。商业、受控、索引型和超大规模只影响获取方式与批次，不影响入选。
+- 按此原则应下载 **66 个**，不下载 **56 个**。入选页面仓库合计 **9.84 TiB**；其中可直接访问或申请访问的 37 个仓库合计 **9.84 TiB**。
+- 排除 8 个超大仓库后，其余非商业入选仓库合计 **41.29 GiB**。其中 `iic/Layout-Instruction-Data` 的 **26.37 GiB** 已在目标盘，校验后复用；加上商业页面样例，普通批次预计新增传输 **15.67 GiB**，按1.2倍预留 **18.80 GiB**。
+- 8 个超大仓库本身合计 **9.80 TiB**，按1.2倍预留 **11.76 TiB**。全部 122 个已分析页面仓库合计 **9.90 TiB**。
+- AnyOCR 新增 13 个仓库合计 **5.69 TiB**；其中 `nv-community/OCR-Synthetic-Multilingual-v1` 单项 **4.96 TiB**，其余 12 项仍有 **755.87 GiB**。G 盘总容量 447.12 GiB、检查时可用 113.93 GiB，即使清空也无法容纳这 13 项。
+- 本轮执行：`nv-community/OCR-Synthetic-Multilingual-v1` 暂不下载；`allenai/olmOCR-mix-0225`、`iic/DocStruct4M`、`iic/MP-DocStruct1M` 已在本地，无需重复下载；其余 9 项下载至 `F:\modelscope`，平台标称合计 **286.60 GiB**。
 - 入选的 29 个数据堂/云市场条目当前页面仓库仅合计 **763.89 MiB**，但这通常只是展示文件或样例，完整商业数据的真实大小未公开。
 - “文件大小”来自详情接口的仓库存储量，不等于解压后占用。标为“元数据/索引”的条目可能在加载时继续下载外部图片；数据堂和云市场条目通常只存展示文件或样例，**完整商业数据的真实大小未公开，不能据此做全量硬盘预算**。
 - 商业条目页面即使显示 Apache-2.0，也同时在 README 声明“商用数据/版权归数据堂”，因此表中按更保守的商业获取口径处理。
 
 ## 建议下载顺序
 
-1. 第一批：校验复用 `iic/Layout-Instruction-Data`，再下载其余 20 个非商业入选仓库，预计新增 **7.19 GiB**。其中索引型条目加载后可能继续拉取原图，MaritimeOCRBench 与 OCR-KIE 需申请。
+1. 第一批：校验复用 `iic/Layout-Instruction-Data`，再下载其余 28 个非商业普通规模入选仓库，预计新增 **14.92 GiB**。其中索引型条目加载后可能继续拉取原图；受控仓库需先完成申请。
 2. 第二批：获取 29 个数据堂/云市场入选条目的样例并逐一询价/提交需求；页面样例仓库合计 **763.89 MiB**，不能代表全量。
-3. 第三批：下载 IDL、PDFA、SceneVTG-Erase，仓库合计 **4.11 TiB**。这三项仍属于必下范围，但应独立安排磁盘、带宽、解压空间和许可审查。
+3. 第三批：对尚未持有的超大仓库逐项安排 `AI-ModelScope/idl-wds`、`AI-ModelScope/pdfa-eng-wds`、`Kpillow/SceneVTG-Erase`、`kevin726/hy_202504_ocr_data`、`nv-community/OCR-Synthetic-Multilingual-v1`，仓库合计 **9.34 TiB**；`allenai/olmOCR-mix-0225`、`iic/DocStruct4M`、`iic/MP-DocStruct1M` 已持有，无需重复下载。其余项目仍须分别安排磁盘、带宽、解压空间、访问申请和许可审查。
 4. 其余 56 个语音、噪声、视频、普通图像/图文、视觉问答和纯文本条目不下载。
-
-## 当前下载执行结果
-
-> 状态更新时间：2026-07-21T18:36:34+08:00。
-
-- 本批共 50 个目标：公开仓库完成 19 个；已有仓库校验完成 1 个；待登录/申请 1 个；商业页面样例完成 29 个。
-- 本次新写入约 **7.92 GiB**；`iic/Layout-Instruction-Data` 复用并 SHA-256 校验了已有的 26.37 GiB。E 盘剩余 **11.64 GiB**。
-- 尚未取得：`Wente47/M2E`。`Wente47/M2E` 的匿名仓库接口返回 HTTP 401，需配置 ModelScope Token/完成登录后用 `--retry-access` 续传。
-- 下载日志：`E:\data\doc\modelscope\modelscope-download-20260721-164455.log`；逐项状态：`E:\data\doc\modelscope\modelscope-download-status.md`。
-- 数据堂和云市场的 29 项仅下载了页面仓库样例，不代表已购买或取得商业全量。
 
 ## 数据集明细
 
@@ -144,3 +136,16 @@
 | 107 | [DatatangBeijing/280_Hours_Norwegian_Scripted_Monologue_Smartphone_Speech_Dataset<br>280小时挪威语手机采集朗读语音数据](https://www.modelscope.cn/datasets/DatatangBeijing/280_Hours_Norwegian_Scripted_Monologue_Smartphone_Speech_Dataset) | 语音｜ASR | 280小时 | 658.99 KiB（样例/页面仓库） | 挪威语语音数据_朗读（手机），基于给定的脚本朗读并模拟录制，录音人共计157名，录音人来自挪威，录音环境为在安静无回音的环境。录音内容广泛，每人约1000句。 | 商业；全量需采购（仓库字段：Apache License 2.0） | 不下载：不含目标OCR/文档数据 |
 | 108 | [DatatangBeijing/98_Hours_Taiwan_Mandarin_Speech_Data_by_Mobile_Phone_Reading<br>98小时台湾普通话手机采集语音数据_朗读](https://www.modelscope.cn/datasets/DatatangBeijing/98_Hours_Taiwan_Mandarin_Speech_Data_by_Mobile_Phone_Reading) | 语音｜ASR | 98小时 | 659.14 KiB（样例/页面仓库） | 台湾普通话语音数据_朗读（手机），基于给定的脚本朗读并模拟录制，内容覆盖经济、娱乐、新闻、口语、数字、字母等通用和人机交互场景。 | 商业；全量需采购（仓库字段：Apache License 2.0） | 不下载：不含目标OCR/文档数据 |
 | 109 | [iic/Layout-Instruction-Data<br>文档理解版式指令微调数据集](https://www.modelscope.cn/datasets/iic/Layout-Instruction-Data) | 文档｜理解/指令微调 | 116,000条预训练描述 + 300,000条SFT指令 | 26.37 GiB | LayoutLLM文档理解语料，含文档图、OCR结果、版式预训练描述、带/不带LayoutCoT的SFT指令及CORD/FUNSD/SROIE评测数据。 | Apache License 2.0；可直接访问 | 下载：本地已有26.37 GiB仓库；哈希校验后直接复用 |
+| 110 | [VirtualLUO/Chronicles-OCR<br>Chronicles-OCR 古文字跨时代评测集](https://www.modelscope.cn/datasets/VirtualLUO/Chronicles-OCR) | OCR｜手写文字 | 2,800张 / 汉字七种书体 | 1.23 GiB | 面向甲骨文至现代书体演变的跨时代中文视觉感知评测集，2,800张图按汉字七种书体严格平衡。 | Apache License 2.0；需申请访问 | 必下（AnyOCR新增）：古文字跨时代OCR评测；需申请访问 |
+| 111 | [nv-community/OCR-Synthetic-Multilingual-v1<br>NVIDIA 多语言合成 OCR 数据集](https://www.modelscope.cn/datasets/nv-community/OCR-Synthetic-Multilingual-v1) | OCR｜场景文字 | 12,258,146条 / 6种语言 | 4.96 TiB | NVIDIA基于扩展SynthDoG生成的六语种OCR训练集，HDF5内含图像、词/行/段框、四边形和阅读顺序图。 | cc-by-4.0；需申请访问 | 必下（AnyOCR新增），本轮暂缓：六语种合成OCR；4.96 TiB且需申请访问 |
+| 112 | [kevin726/hy_202504_ocr_data<br>hy_202504 OCR 数据](https://www.modelscope.cn/datasets/kevin726/hy_202504_ocr_data) | OCR｜信息不足 | README未说明 | 278.87 GiB | AnyOCR收录的278.87 GiB大型OCR仓库，但数据卡仍是默认模板，任务、标注和来源均需下载后抽检。 | Apache License 2.0；可直接访问 | 必下（AnyOCR新增）：先抽检任务、来源和标注；278.87 GiB独立批次 |
+| 113 | [DaoCloud/daocloud-datasets<br>DaoCloud 文档微调数据集](https://www.modelscope.cn/datasets/DaoCloud/daocloud-datasets) | 文档｜理解/指令微调 | README未说明 | 79.78 MiB | 使用DeepSeek蒸馏得到的DaoCloud文档微调数据；更接近文档问答/知识微调，因AnyOCR收录而列为必下。 | Apache License 2.0；可直接访问 | 必下（AnyOCR新增）：文档微调数据；核对是否包含图像/OCR字段 |
+| 114 | [iic/MP-DocStruct1M<br>MP-DocStruct1M 多页文档理解数据集](https://www.modelscope.cn/datasets/iic/MP-DocStruct1M) | 文档｜预训练语料 | 约1,000,000条多页文档样本 | 101.45 GiB | DocOwl2多页文档理解预训练集，覆盖多页文字解析和根据文字查找页码两类任务。 | Apache License 2.0；可直接访问 | 必下（AnyOCR新增），本地已有：无需重复下载 |
+| 115 | [iic/DocStruct4M<br>DocStruct4M](https://www.modelscope.cn/datasets/iic/DocStruct4M) | 文档｜预训练语料 | 约4,000,000条（解析3M+文字定位/识别1M） | 315.61 GiB | DocOwl1.5统一文档结构学习数据，覆盖文档、网页、表格、图表和自然图，含解析及多粒度文字定位/识别。 | Apache License 2.0；可直接访问 | 必下（AnyOCR新增），本地已有：无需重复下载 |
+| 116 | [iic/D4LA<br>D4LA 版面分析数据集](https://www.modelscope.cn/datasets/iic/D4LA) | 文档｜版面分析 | 11,092页 / 12类文档 / 27类版面元素 | 1.29 GiB | 细粒度文档版面分析数据，覆盖12类文档与27类版面元素，提供图像、检测JSON及VGT网格特征。 | Apache License 2.0；可直接访问 | 必下（AnyOCR新增）：版面分析训练与评测 |
+| 117 | [racineai/ocr-pdf-degraded<br>OCR-PDF-Degraded](https://www.modelscope.cn/datasets/racineai/ocr-pdf-degraded) | OCR｜场景文字 | README未说明 | 2.50 GiB | 由干净PDF页面合成透视、模糊、亮度、对比度和JPEG退化，并配对OCR真值与退化参数。 | apache-2.0；可直接访问 | 必下（AnyOCR新增）：退化文档鲁棒OCR训练与评测 |
+| 118 | [prithivMLmods/Corvus-OCR-Caption-Mini-Mix<br>Corvus OCR Caption Mini Mix](https://www.modelscope.cn/datasets/prithivMLmods/Corvus-OCR-Caption-Mini-Mix) | 多模态｜图文/VQA | README未说明（仅train划分） | 810.91 MiB | 英中图文混合集，兼有自然图长描述、OCR密集科学/数学/文档样本及LaTeX内容。 | apache-2.0；可直接访问 | 必下（AnyOCR新增）：OCR密集图文预训练；注意其同时含普通长描述样本 |
+| 119 | [allenai/olmOCR-mix-0225<br>olmOCR Mix 0225](https://www.modelscope.cn/datasets/allenai/olmOCR-mix-0225) | 文档｜预训练语料 | 105,504文档 / 266,135页 | 52.21 GiB | 网页PDF和Internet Archive图书页面，经GPT-4o按自然阅读顺序生成纯文本，可训练或评估文档OCR管线。 | Apache License 2.0；可直接访问 | 必下（AnyOCR新增），本地已有：无需重复下载 |
+| 120 | [ChatDOC/OCRFlux-bench-single<br>OCRFlux 单页文档解析评测集](https://www.modelscope.cn/datasets/ChatDOC/OCRFlux-bench-single) | 评测｜OCR/文档 | 2,000页（中英文各1,000页） | 630.45 MiB | 人工多轮复核的中英文PDF页面与Markdown真值，用于单页OCR和版面解析评测。 | Apache License 2.0；可直接访问 | 必下（AnyOCR新增）：中英文单页文档解析评测 |
+| 121 | [ChatDOC/OCRFlux-pubtabnet-single<br>OCRFlux PubTabNet 表格解析评测集](https://www.modelscope.cn/datasets/ChatDOC/OCRFlux-pubtabnet-single) | OCR｜表格/公式 | 9,064张表格图 | 193.25 MiB | 由PubTabNet转换得到的表格图与HTML真值，覆盖简单表格和含跨行/跨列单元格的复杂表格。 | Apache License 2.0；可直接访问 | 必下（AnyOCR新增）：表格图到HTML解析评测 |
+| 122 | [AI-ModelScope/LaTeX_OCR<br>LaTeX OCR 数据集](https://www.modelscope.cn/datasets/AI-ModelScope/LaTeX_OCR) | OCR｜表格/公式 | 5个子集；印刷体约10万+合成手写约10万+真实手写 | 1.03 GiB | 来自公开公式资源和自建数据的五个公式OCR子集，覆盖印刷体、合成手写、真实手写及对应印刷版本。 | Apache License 2.0；可直接访问 | 必下（AnyOCR新增）：印刷体与手写公式OCR |
