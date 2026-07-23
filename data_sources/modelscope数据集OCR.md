@@ -11,7 +11,8 @@
 - 排除 8 个超大仓库后，其余非商业入选仓库合计 **41.29 GiB**。其中 `iic/Layout-Instruction-Data` 的 **26.37 GiB** 已在目标盘，校验后复用；加上商业页面样例，普通批次预计新增传输 **15.67 GiB**，按1.2倍预留 **18.80 GiB**。
 - 8 个超大仓库本身合计 **9.80 TiB**，按1.2倍预留 **11.76 TiB**。全部 122 个已分析页面仓库合计 **9.90 TiB**。
 - AnyOCR 新增 13 个仓库合计 **5.69 TiB**；其中 `nv-community/OCR-Synthetic-Multilingual-v1` 单项 **4.96 TiB**，其余 12 项仍有 **755.87 GiB**。G 盘总容量 447.12 GiB、检查时可用 113.93 GiB，即使清空也无法容纳这 13 项。
-- 本轮执行：`nv-community/OCR-Synthetic-Multilingual-v1` 暂不下载；`allenai/olmOCR-mix-0225`、`iic/DocStruct4M`、`iic/MP-DocStruct1M` 已在本地，无需重复下载；其余 9 项下载至 `F:\modelscope`，平台标称合计 **286.60 GiB**。
+- 本轮执行：`nv-community/OCR-Synthetic-Multilingual-v1` 暂不下载；`allenai/olmOCR-mix-0225` 在其他电脑已有，本机不下载；`iic/DocStruct4M`、`iic/MP-DocStruct1M` 由用户确认已持有，但在 E/F/G 指定目录未检出，待提供路径核验且本轮不重复下载；其余 9 项下载或续传至 `F:\modelscope`，平台标称合计 **286.60 GiB**。
+- E/F/G 三个指定目录共命中 61 个入选仓库：60 个已按远端清单核验或修复完成；`allenai/olmOCR-mix-0225` 的 F 盘副本不完整，因完整副本在其他电脑而停止本机续传。`Kpillow/SceneVTG-Erase` 在 G 盘核验为 29/29 个文件、322.79 GiB；`kevin726/hy_202504_ocr_data` 在 F 盘核验为 28/28 个文件、278.87 GiB。
 - 入选的 29 个数据堂/云市场条目当前页面仓库仅合计 **763.89 MiB**，但这通常只是展示文件或样例，完整商业数据的真实大小未公开。
 - “文件大小”来自详情接口的仓库存储量，不等于解压后占用。标为“元数据/索引”的条目可能在加载时继续下载外部图片；数据堂和云市场条目通常只存展示文件或样例，**完整商业数据的真实大小未公开，不能据此做全量硬盘预算**。
 - 商业条目页面即使显示 Apache-2.0，也同时在 README 声明“商用数据/版权归数据堂”，因此表中按更保守的商业获取口径处理。
@@ -20,7 +21,7 @@
 
 1. 第一批：校验复用 `iic/Layout-Instruction-Data`，再下载其余 28 个非商业普通规模入选仓库，预计新增 **14.92 GiB**。其中索引型条目加载后可能继续拉取原图；受控仓库需先完成申请。
 2. 第二批：获取 29 个数据堂/云市场入选条目的样例并逐一询价/提交需求；页面样例仓库合计 **763.89 MiB**，不能代表全量。
-3. 第三批：对尚未持有的超大仓库逐项安排 `AI-ModelScope/idl-wds`、`AI-ModelScope/pdfa-eng-wds`、`Kpillow/SceneVTG-Erase`、`kevin726/hy_202504_ocr_data`、`nv-community/OCR-Synthetic-Multilingual-v1`，仓库合计 **9.34 TiB**；`allenai/olmOCR-mix-0225`、`iic/DocStruct4M`、`iic/MP-DocStruct1M` 已持有，无需重复下载。其余项目仍须分别安排磁盘、带宽、解压空间、访问申请和许可审查。
+3. 第三批：对尚未持有的超大仓库逐项安排 `AI-ModelScope/idl-wds`、`AI-ModelScope/pdfa-eng-wds`、`nv-community/OCR-Synthetic-Multilingual-v1`，仓库合计 **8.75 TiB**；`Kpillow/SceneVTG-Erase`、`kevin726/hy_202504_ocr_data` 已在本地核验完整，无需重复下载；`allenai/olmOCR-mix-0225` 在其他电脑已有，本机不下载；`iic/DocStruct4M`、`iic/MP-DocStruct1M` 由用户确认已持有，本轮不重复下载，但尚待提供实际路径完成核验。其余项目仍须分别安排磁盘、带宽、解压空间、访问申请和许可审查。
 4. 其余 56 个语音、噪声、视频、普通图像/图文、视觉问答和纯文本条目不下载。
 
 ## 数据集明细
@@ -42,7 +43,7 @@
 | 13 | [liekkas/text_det_test_dataset<br>文本检测测试集](https://www.modelscope.cn/datasets/liekkas/text_det_test_dataset) | OCR｜文本检测 | 23张 | 7.32 KiB（元数据/索引） | 23张自然场景图和LabelMe标注，用于文本检测指标的轻量回归测试。 | Apache License 2.0；可直接访问 | 下载：轻量文本检测评测 |
 | 14 | [meituan-longcat/UNO-Bench](https://www.modelscope.cn/datasets/meituan-longcat/UNO-Bench) | 多模态｜图文/VQA | 1,250条全模态 + 2,480条单模态 | 10.03 GiB | 图像、视频、音频和文本联合问答评测，不是OCR数据集。 | mit；需申请访问 | 不下载：不含目标OCR/文档数据 |
 | 15 | [iic/SIBR<br>读光-OCR-自然场景信息抽取数据集-中英](https://www.modelscope.cn/datasets/iic/SIBR) | 文档｜解析/KIE | 1,000张（训练600+测试400） | 562.85 MiB | 中英自然场景视觉信息抽取，含实体、框、实体内/间链接，兼容FUNSD/XFUND风格。 | Apache License 2.0；可直接访问 | 下载：KIE训练与评测 |
-| 16 | [Kpillow/SceneVTG-Erase<br>SceneVTG-Erase](https://www.modelscope.cn/datasets/Kpillow/SceneVTG-Erase) | 视觉｜文字生成/擦除 | 155,000张 / 约192万文本行 | 322.79 GiB | 原图、文字擦除图和文本行标注，用于视觉文字生成/擦除而非传统OCR。 | Apache License 2.0；可直接访问 | 下载：文字原图/擦除图/行标注；超大批次 |
+| 16 | [Kpillow/SceneVTG-Erase<br>SceneVTG-Erase](https://www.modelscope.cn/datasets/Kpillow/SceneVTG-Erase) | 视觉｜文字生成/擦除 | 155,000张 / 约192万文本行 | 322.79 GiB | 原图、文字擦除图和文本行标注，用于视觉文字生成/擦除而非传统OCR。 | Apache License 2.0；可直接访问 | 本地已有：G盘29/29个远端文件、322.79 GiB核验完整，无需重复下载 |
 | 17 | [AI-ModelScope/idl-wds](https://www.modelscope.cn/datasets/AI-ModelScope/idl-wds) | 文档｜预训练语料 | 3,144,726文档 / 19,174,595页 | 2.37 TiB | 工业文档PDF/TIFF与Textract OCR标注的WebDataset语料，适合大规模文档预训练。 | other；可直接访问 | 下载：PDF/TIFF原文档；超大批次并审查版权 |
 | 18 | [swift/llava-med-zh-instruct-60k](https://www.modelscope.cn/datasets/swift/llava-med-zh-instruct-60k) | 多模态｜图文/VQA | 约60,000条 | 6.12 GiB | 由LLaVA-Med翻译得到的中文医学视觉指令数据，不是OCR专用集。 | apache-2.0；可直接访问 | 不下载：不含目标OCR/文档数据 |
 | 19 | [iic/WebText_Dataset<br>读光-OCR-网络文本图像识别数据集-中英](https://www.modelscope.cn/datasets/iic/WebText_Dataset) | OCR｜场景文字 | 10,000张文本切片 | 395.02 KiB（元数据/索引） | 从MTWI抽取的中英文本行切片，用于通用/场景文字识别测试。 | Apache License 2.0；可直接访问 | 下载：识别评测；核对外部原图 |
@@ -140,12 +141,12 @@
 | 111 | [nv-community/OCR-Synthetic-Multilingual-v1<br>NVIDIA 多语言合成 OCR 数据集](https://www.modelscope.cn/datasets/nv-community/OCR-Synthetic-Multilingual-v1) | OCR｜场景文字 | 12,258,146条 / 6种语言 | 4.96 TiB | NVIDIA基于扩展SynthDoG生成的六语种OCR训练集，HDF5内含图像、词/行/段框、四边形和阅读顺序图。 | cc-by-4.0；需申请访问 | 必下（AnyOCR新增），本轮暂缓：六语种合成OCR；4.96 TiB且需申请访问 |
 | 112 | [kevin726/hy_202504_ocr_data<br>hy_202504 OCR 数据](https://www.modelscope.cn/datasets/kevin726/hy_202504_ocr_data) | OCR｜信息不足 | README未说明 | 278.87 GiB | AnyOCR收录的278.87 GiB大型OCR仓库，但数据卡仍是默认模板，任务、标注和来源均需下载后抽检。 | Apache License 2.0；可直接访问 | 必下（AnyOCR新增）：先抽检任务、来源和标注；278.87 GiB独立批次 |
 | 113 | [DaoCloud/daocloud-datasets<br>DaoCloud 文档微调数据集](https://www.modelscope.cn/datasets/DaoCloud/daocloud-datasets) | 文档｜理解/指令微调 | README未说明 | 79.78 MiB | 使用DeepSeek蒸馏得到的DaoCloud文档微调数据；更接近文档问答/知识微调，因AnyOCR收录而列为必下。 | Apache License 2.0；可直接访问 | 必下（AnyOCR新增）：文档微调数据；核对是否包含图像/OCR字段 |
-| 114 | [iic/MP-DocStruct1M<br>MP-DocStruct1M 多页文档理解数据集](https://www.modelscope.cn/datasets/iic/MP-DocStruct1M) | 文档｜预训练语料 | 约1,000,000条多页文档样本 | 101.45 GiB | DocOwl2多页文档理解预训练集，覆盖多页文字解析和根据文字查找页码两类任务。 | Apache License 2.0；可直接访问 | 必下（AnyOCR新增），本地已有：无需重复下载 |
-| 115 | [iic/DocStruct4M<br>DocStruct4M](https://www.modelscope.cn/datasets/iic/DocStruct4M) | 文档｜预训练语料 | 约4,000,000条（解析3M+文字定位/识别1M） | 315.61 GiB | DocOwl1.5统一文档结构学习数据，覆盖文档、网页、表格、图表和自然图，含解析及多粒度文字定位/识别。 | Apache License 2.0；可直接访问 | 必下（AnyOCR新增），本地已有：无需重复下载 |
+| 114 | [iic/MP-DocStruct1M<br>MP-DocStruct1M 多页文档理解数据集](https://www.modelscope.cn/datasets/iic/MP-DocStruct1M) | 文档｜预训练语料 | 约1,000,000条多页文档样本 | 101.45 GiB | DocOwl2多页文档理解预训练集，覆盖多页文字解析和根据文字查找页码两类任务。 | Apache License 2.0；可直接访问 | 必下（AnyOCR新增），用户确认已有：E/F/G指定目录未检出，待提供路径核验；本轮不重复下载 |
+| 115 | [iic/DocStruct4M<br>DocStruct4M](https://www.modelscope.cn/datasets/iic/DocStruct4M) | 文档｜预训练语料 | 约4,000,000条（解析3M+文字定位/识别1M） | 315.61 GiB | DocOwl1.5统一文档结构学习数据，覆盖文档、网页、表格、图表和自然图，含解析及多粒度文字定位/识别。 | Apache License 2.0；可直接访问 | 必下（AnyOCR新增），用户确认已有：E/F/G指定目录未检出，待提供路径核验；本轮不重复下载 |
 | 116 | [iic/D4LA<br>D4LA 版面分析数据集](https://www.modelscope.cn/datasets/iic/D4LA) | 文档｜版面分析 | 11,092页 / 12类文档 / 27类版面元素 | 1.29 GiB | 细粒度文档版面分析数据，覆盖12类文档与27类版面元素，提供图像、检测JSON及VGT网格特征。 | Apache License 2.0；可直接访问 | 必下（AnyOCR新增）：版面分析训练与评测 |
 | 117 | [racineai/ocr-pdf-degraded<br>OCR-PDF-Degraded](https://www.modelscope.cn/datasets/racineai/ocr-pdf-degraded) | OCR｜场景文字 | README未说明 | 2.50 GiB | 由干净PDF页面合成透视、模糊、亮度、对比度和JPEG退化，并配对OCR真值与退化参数。 | apache-2.0；可直接访问 | 必下（AnyOCR新增）：退化文档鲁棒OCR训练与评测 |
 | 118 | [prithivMLmods/Corvus-OCR-Caption-Mini-Mix<br>Corvus OCR Caption Mini Mix](https://www.modelscope.cn/datasets/prithivMLmods/Corvus-OCR-Caption-Mini-Mix) | 多模态｜图文/VQA | README未说明（仅train划分） | 810.91 MiB | 英中图文混合集，兼有自然图长描述、OCR密集科学/数学/文档样本及LaTeX内容。 | apache-2.0；可直接访问 | 必下（AnyOCR新增）：OCR密集图文预训练；注意其同时含普通长描述样本 |
-| 119 | [allenai/olmOCR-mix-0225<br>olmOCR Mix 0225](https://www.modelscope.cn/datasets/allenai/olmOCR-mix-0225) | 文档｜预训练语料 | 105,504文档 / 266,135页 | 52.21 GiB | 网页PDF和Internet Archive图书页面，经GPT-4o按自然阅读顺序生成纯文本，可训练或评估文档OCR管线。 | Apache License 2.0；可直接访问 | 必下（AnyOCR新增），本地已有：无需重复下载 |
+| 119 | [allenai/olmOCR-mix-0225<br>olmOCR Mix 0225](https://www.modelscope.cn/datasets/allenai/olmOCR-mix-0225) | 文档｜预训练语料 | 105,504文档 / 266,135页 | 52.21 GiB | 网页PDF和Internet Archive图书页面，经GPT-4o按自然阅读顺序生成纯文本，可训练或评估文档OCR管线。 | Apache License 2.0；可直接访问 | 必下（AnyOCR新增），其他电脑已有：本机不下载；F盘仅有不完整残留 |
 | 120 | [ChatDOC/OCRFlux-bench-single<br>OCRFlux 单页文档解析评测集](https://www.modelscope.cn/datasets/ChatDOC/OCRFlux-bench-single) | 评测｜OCR/文档 | 2,000页（中英文各1,000页） | 630.45 MiB | 人工多轮复核的中英文PDF页面与Markdown真值，用于单页OCR和版面解析评测。 | Apache License 2.0；可直接访问 | 必下（AnyOCR新增）：中英文单页文档解析评测 |
 | 121 | [ChatDOC/OCRFlux-pubtabnet-single<br>OCRFlux PubTabNet 表格解析评测集](https://www.modelscope.cn/datasets/ChatDOC/OCRFlux-pubtabnet-single) | OCR｜表格/公式 | 9,064张表格图 | 193.25 MiB | 由PubTabNet转换得到的表格图与HTML真值，覆盖简单表格和含跨行/跨列单元格的复杂表格。 | Apache License 2.0；可直接访问 | 必下（AnyOCR新增）：表格图到HTML解析评测 |
 | 122 | [AI-ModelScope/LaTeX_OCR<br>LaTeX OCR 数据集](https://www.modelscope.cn/datasets/AI-ModelScope/LaTeX_OCR) | OCR｜表格/公式 | 5个子集；印刷体约10万+合成手写约10万+真实手写 | 1.03 GiB | 来自公开公式资源和自建数据的五个公式OCR子集，覆盖印刷体、合成手写、真实手写及对应印刷版本。 | Apache License 2.0；可直接访问 | 必下（AnyOCR新增）：印刷体与手写公式OCR |

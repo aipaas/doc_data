@@ -444,12 +444,12 @@ RECOMMENDATION_OVERRIDES = {
     "nv-community/OCR-Synthetic-Multilingual-v1": "必下（AnyOCR新增），本轮暂缓：六语种合成OCR；4.96 TiB且需申请访问",
     "kevin726/hy_202504_ocr_data": "必下（AnyOCR新增）：先抽检任务、来源和标注；278.87 GiB独立批次",
     "DaoCloud/daocloud-datasets": "必下（AnyOCR新增）：文档微调数据；核对是否包含图像/OCR字段",
-    "iic/MP-DocStruct1M": "必下（AnyOCR新增），本地已有：无需重复下载",
-    "iic/DocStruct4M": "必下（AnyOCR新增），本地已有：无需重复下载",
+    "iic/MP-DocStruct1M": "必下（AnyOCR新增），用户确认已有：E/F/G指定目录未检出，待提供路径核验；本轮不重复下载",
+    "iic/DocStruct4M": "必下（AnyOCR新增），用户确认已有：E/F/G指定目录未检出，待提供路径核验；本轮不重复下载",
     "iic/D4LA": "必下（AnyOCR新增）：版面分析训练与评测",
     "racineai/ocr-pdf-degraded": "必下（AnyOCR新增）：退化文档鲁棒OCR训练与评测",
     "prithivMLmods/Corvus-OCR-Caption-Mini-Mix": "必下（AnyOCR新增）：OCR密集图文预训练；注意其同时含普通长描述样本",
-    "allenai/olmOCR-mix-0225": "必下（AnyOCR新增），本地已有：无需重复下载",
+    "allenai/olmOCR-mix-0225": "必下（AnyOCR新增），其他电脑已有：本机不下载；F盘仅有不完整残留",
     "ChatDOC/OCRFlux-bench-single": "必下（AnyOCR新增）：中英文单页文档解析评测",
     "ChatDOC/OCRFlux-pubtabnet-single": "必下（AnyOCR新增）：表格图到HTML解析评测",
     "AI-ModelScope/LaTeX_OCR": "必下（AnyOCR新增）：印刷体与手写公式OCR",
@@ -464,7 +464,7 @@ RECOMMENDATION_OVERRIDES = {
     "Genius-Society/svhn": "下载：数字/门牌文字识别",
     "liekkas/text_det_test_dataset": "下载：轻量文本检测评测",
     "iic/SIBR": "下载：KIE训练与评测",
-    "Kpillow/SceneVTG-Erase": "下载：文字原图/擦除图/行标注；超大批次",
+    "Kpillow/SceneVTG-Erase": "本地已有：G盘29/29个远端文件、322.79 GiB核验完整，无需重复下载",
     "AI-ModelScope/idl-wds": "下载：PDF/TIFF原文档；超大批次并审查版权",
     "iic/WebText_Dataset": "下载：识别评测；核对外部原图",
     "xmatrix/OCR_Synthetic_LaTeX": "下载：公式OCR；先抽检合成质量",
@@ -508,10 +508,23 @@ ANYOCR_NEW_KEYS = {
 }
 
 
-ANYOCR_LOCAL_REUSE_KEYS = {
+ANYOCR_UNLOCATED_USER_OWNED_KEYS = {
     "iic/MP-DocStruct1M",
     "iic/DocStruct4M",
+}
+
+
+ANYOCR_OTHER_COMPUTER_KEYS = {
     "allenai/olmOCR-mix-0225",
+}
+
+
+ANYOCR_SKIP_KEYS = ANYOCR_UNLOCATED_USER_OWNED_KEYS | ANYOCR_OTHER_COMPUTER_KEYS
+
+
+VERIFIED_LOCAL_GIANT_KEYS = {
+    "Kpillow/SceneVTG-Erase",
+    "kevin726/hy_202504_ocr_data",
 }
 
 
@@ -945,27 +958,32 @@ def render_markdown(payload: dict[str, Any], output_path: Path) -> None:
         record
         for record in anyocr_new_records
         if dataset_key(record)
-        not in ANYOCR_LOCAL_REUSE_KEYS | ANYOCR_DEFERRED_KEYS
+        not in ANYOCR_SKIP_KEYS | ANYOCR_DEFERRED_KEYS
     ]
     anyocr_current_batch_size = sum(
         int(record.get("StorageSize") or 0)
         for record in anyocr_current_batch_records
     )
-    anyocr_local_names = "、".join(
-        f"`{key}`" for key in sorted(ANYOCR_LOCAL_REUSE_KEYS)
+    anyocr_unlocated_names = "、".join(
+        f"`{key}`" for key in sorted(ANYOCR_UNLOCATED_USER_OWNED_KEYS)
+    )
+    anyocr_other_computer_names = "、".join(
+        f"`{key}`" for key in sorted(ANYOCR_OTHER_COMPUTER_KEYS)
     )
     anyocr_deferred_names = "、".join(
         f"`{key}`" for key in sorted(ANYOCR_DEFERRED_KEYS)
     )
-    giant_pending_keys = GIANT_DOWNLOAD_KEYS - ANYOCR_LOCAL_REUSE_KEYS
+    giant_pending_keys = (
+        GIANT_DOWNLOAD_KEYS - ANYOCR_SKIP_KEYS - VERIFIED_LOCAL_GIANT_KEYS
+    )
     giant_pending_size = sum(
         int(record.get("StorageSize") or 0)
         for record in payload["datasets"]
         if dataset_key(record) in giant_pending_keys
     )
     giant_names = "、".join(f"`{key}`" for key in sorted(giant_pending_keys))
-    giant_local_names = "、".join(
-        f"`{key}`" for key in sorted(ANYOCR_LOCAL_REUSE_KEYS)
+    giant_verified_names = "、".join(
+        f"`{key}`" for key in sorted(VERIFIED_LOCAL_GIANT_KEYS)
     )
     lines = [
         "# ModelScope 数据集 OCR / 文档识别筛选分析",
@@ -981,7 +999,8 @@ def render_markdown(payload: dict[str, Any], output_path: Path) -> None:
         f"- 排除 {len(GIANT_DOWNLOAD_KEYS)} 个超大仓库后，其余非商业入选仓库合计 **{human_size(selected_direct_without_giants)}**。其中 `iic/Layout-Instruction-Data` 的 **{human_size(selected_local_reuse_size)}** 已在目标盘，校验后复用；加上商业页面样例，普通批次预计新增传输 **{human_size(new_transfer_bytes)}**，按1.2倍预留 **{human_size(math.ceil(new_transfer_bytes * 1.2))}**。",
         f"- {len(GIANT_DOWNLOAD_KEYS)} 个超大仓库本身合计 **{human_size(selected_giant_size)}**，按1.2倍预留 **{human_size(math.ceil(selected_giant_size * 1.2))}**。全部 {analyzed_total} 个已分析页面仓库合计 **{human_size(all_size)}**。",
         f"- AnyOCR 新增 {len(anyocr_new_records)} 个仓库合计 **{human_size(anyocr_new_size)}**；其中 `{anyocr_largest_key}` 单项 **{human_size(anyocr_largest_size)}**，其余 12 项仍有 **{human_size(anyocr_new_size - anyocr_largest_size)}**。G 盘总容量 447.12 GiB、检查时可用 113.93 GiB，即使清空也无法容纳这 13 项。",
-        f"- 本轮执行：{anyocr_deferred_names} 暂不下载；{anyocr_local_names} 已在本地，无需重复下载；其余 {len(anyocr_current_batch_records)} 项下载至 `F:\\modelscope`，平台标称合计 **{human_size(anyocr_current_batch_size)}**。",
+        f"- 本轮执行：{anyocr_deferred_names} 暂不下载；{anyocr_other_computer_names} 在其他电脑已有，本机不下载；{anyocr_unlocated_names} 由用户确认已持有，但在 E/F/G 指定目录未检出，待提供路径核验且本轮不重复下载；其余 {len(anyocr_current_batch_records)} 项下载或续传至 `F:\\modelscope`，平台标称合计 **{human_size(anyocr_current_batch_size)}**。",
+        "- E/F/G 三个指定目录共命中 61 个入选仓库：60 个已按远端清单核验或修复完成；`allenai/olmOCR-mix-0225` 的 F 盘副本不完整，因完整副本在其他电脑而停止本机续传。`Kpillow/SceneVTG-Erase` 在 G 盘核验为 29/29 个文件、322.79 GiB；`kevin726/hy_202504_ocr_data` 在 F 盘核验为 28/28 个文件、278.87 GiB。",
         f"- 入选的 {selected_commercial_count} 个数据堂/云市场条目当前页面仓库仅合计 **{human_size(selected_commercial_page_size)}**，但这通常只是展示文件或样例，完整商业数据的真实大小未公开。",
         "- “文件大小”来自详情接口的仓库存储量，不等于解压后占用。标为“元数据/索引”的条目可能在加载时继续下载外部图片；数据堂和云市场条目通常只存展示文件或样例，**完整商业数据的真实大小未公开，不能据此做全量硬盘预算**。",
         "- 商业条目页面即使显示 Apache-2.0，也同时在 README 声明“商用数据/版权归数据堂”，因此表中按更保守的商业获取口径处理。",
@@ -990,7 +1009,7 @@ def render_markdown(payload: dict[str, Any], output_path: Path) -> None:
         "",
         f"1. 第一批：校验复用 `iic/Layout-Instruction-Data`，再下载其余 {selected_direct_count - len(GIANT_DOWNLOAD_KEYS) - len(LOCAL_REUSE_KEYS)} 个非商业普通规模入选仓库，预计新增 **{human_size(new_direct_bytes)}**。其中索引型条目加载后可能继续拉取原图；受控仓库需先完成申请。",
         f"2. 第二批：获取 {selected_commercial_count} 个数据堂/云市场入选条目的样例并逐一询价/提交需求；页面样例仓库合计 **{human_size(selected_commercial_page_size)}**，不能代表全量。",
-        f"3. 第三批：对尚未持有的超大仓库逐项安排 {giant_names}，仓库合计 **{human_size(giant_pending_size)}**；{giant_local_names} 已持有，无需重复下载。其余项目仍须分别安排磁盘、带宽、解压空间、访问申请和许可审查。",
+        f"3. 第三批：对尚未持有的超大仓库逐项安排 {giant_names}，仓库合计 **{human_size(giant_pending_size)}**；{giant_verified_names} 已在本地核验完整，无需重复下载；{anyocr_other_computer_names} 在其他电脑已有，本机不下载；{anyocr_unlocated_names} 由用户确认已持有，本轮不重复下载，但尚待提供实际路径完成核验。其余项目仍须分别安排磁盘、带宽、解压空间、访问申请和许可审查。",
         f"4. 其余 {analyzed_total - selected_count} 个语音、噪声、视频、普通图像/图文、视觉问答和纯文本条目不下载。",
         "",
         *download_execution_lines(),
