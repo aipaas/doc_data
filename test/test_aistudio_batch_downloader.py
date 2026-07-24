@@ -61,16 +61,18 @@ class FakeFileSession:
         self.get_headers.append(dict(headers))
         range_value = headers.get("Range")
         if range_value:
-            offset = int(range_value.removeprefix("bytes=").removesuffix("-"))
+            start_value, end_value = range_value.removeprefix("bytes=").split("-", 1)
+            offset = int(start_value)
+            end = int(end_value) if end_value else len(self.full_content) - 1
             return FakeResponse(
                 status_code=206,
                 headers={
                     "Content-Range": (
-                        f"bytes {offset}-{len(self.full_content) - 1}/"
+                        f"bytes {offset}-{end}/"
                         f"{len(self.full_content)}"
                     )
                 },
-                chunks=[self.full_content[offset:]],
+                chunks=[self.full_content[offset : end + 1]],
             )
         return FakeResponse(status_code=200, chunks=[self.full_content])
 
@@ -239,6 +241,13 @@ class CatalogTests(unittest.TestCase):
     def test_dataset_id_argument_deduplicates_without_reordering(self):
         args = downloader.parse_args(["--dataset-ids", "3, 1,3"])
         self.assertEqual(args.dataset_ids, (3, 1))
+
+    def test_force_legacy_api_argument(self):
+        args = downloader.parse_args(
+            ["--force-legacy-api", "--legacy-workers", "8"]
+        )
+        self.assertTrue(args.force_legacy_api)
+        self.assertEqual(args.legacy_workers, 8)
 
 
 class CommandTests(unittest.TestCase):
@@ -419,10 +428,115 @@ class StateTests(unittest.TestCase):
                 )
             self.assertEqual(result, "completed")
             repo_download.assert_called_once()
-            legacy_download.assert_called_once_with(entry, target, state, client, 2)
+            legacy_download.assert_called_once_with(entry, target, state, client, 2, 1)
+
+    def test_force_legacy_api_bypasses_repo_download(self):
+        entry = downloader.DatasetEntry(1, "one", 2, "owner", "repo", 2, 1)
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            target = root / "owner" / "repo"
+            state = downloader.StateStore(root / "state.json")
+            client = object()
+            with (
+                patch.object(downloader, "download_repo_dataset") as repo_download,
+                patch.object(
+                    downloader, "download_legacy_dataset", return_value="completed"
+                ) as legacy_download,
+            ):
+                result = downloader.download_repo_with_legacy_fallback(
+                    entry,
+                    target,
+                    state,
+                    ["aistudio"],
+                    3,
+                    2,
+                    1.0,
+                    client,
+                    "token",
+                    force_legacy_api=True,
+                )
+            self.assertEqual(result, "completed")
+            repo_download.assert_not_called()
+            legacy_download.assert_called_once_with(entry, target, state, client, 2, 1)
 
 
 class LegacyDownloadTests(unittest.TestCase):
+    def test_signed_url_refresh_does_not_consume_failure_retries(self):
+        content = b"abcdefghij"
+        client = FakeLegacyClient(content)
+        with tempfile.TemporaryDirectory() as temporary:
+            target = Path(temporary)
+            with (
+                patch.object(downloader, "LEGACY_RANGE_CHUNK_SIZE", 2),
+                patch.object(downloader, "LEGACY_SIGNED_URL_MAX_AGE", 0),
+            ):
+                downloader.download_legacy_file(
+                    client,
+                    dataset_id=100,
+                    file_info={
+                        "fileId": 198,
+                        "fileOriginName": "sample.bin",
+                        "fileSize": len(content),
+                    },
+                    target_dir=target,
+                    file_retries=0,
+                    legacy_workers=2,
+                )
+            self.assertEqual((target / "sample.bin").read_bytes(), content)
+            self.assertGreater(len(client.session.get_headers), 2)
+
+    def test_parallel_ranges_resume_and_append_in_order(self):
+        content = b"abcdefghij"
+        client = FakeLegacyClient(content)
+        with tempfile.TemporaryDirectory() as temporary:
+            target = Path(temporary)
+            (target / "sample.bin.part").write_bytes(content[:2])
+            with patch.object(downloader, "LEGACY_RANGE_CHUNK_SIZE", 2):
+                downloader.download_legacy_file(
+                    client,
+                    dataset_id=100,
+                    file_info={
+                        "fileId": 199,
+                        "fileOriginName": "sample.bin",
+                        "fileSize": len(content),
+                    },
+                    target_dir=target,
+                    file_retries=0,
+                    legacy_workers=3,
+                )
+            self.assertEqual((target / "sample.bin").read_bytes(), content)
+            ranges = sorted(
+                headers["Range"]
+                for headers in client.session.get_headers
+                if headers["Range"] != "bytes=0-0"
+            )
+            self.assertEqual(
+                ranges,
+                ["bytes=2-3", "bytes=4-5", "bytes=6-7", "bytes=8-9"],
+            )
+
+    def test_range_response_must_match_requested_offsets(self):
+        response = FakeResponse(
+            status_code=206,
+            headers={"Content-Range": "bytes 1-2/4"},
+            chunks=[b"ab"],
+        )
+
+        class MismatchedSession:
+            def get(self, *args, **kwargs):
+                del args, kwargs
+                return response
+
+        with self.assertRaisesRegex(downloader.IntegrityError, "Unexpected range"):
+            downloader.fetch_legacy_range(
+                MismatchedSession(),
+                "https://example.invalid/file",
+                0,
+                1,
+                4,
+                1.0,
+            )
+
     def test_resumes_part_file_and_checks_remote_md5(self):
         content = b"abcdef"
         client = FakeLegacyClient(content)

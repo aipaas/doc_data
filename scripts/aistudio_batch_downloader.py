@@ -6,6 +6,7 @@ from __future__ import annotations
 import argparse
 import base64
 import binascii
+import concurrent.futures
 import hashlib
 import json
 import os
@@ -35,6 +36,9 @@ DEFAULT_PAGE_SIZE = 20
 DEFAULT_TASK_ID = 26
 DEFAULT_ORDER_TYPE = 1
 CHUNK_SIZE = 1024 * 1024
+LEGACY_RANGE_CHUNK_SIZE = 16 * 1024 * 1024
+LEGACY_PROGRESS_BYTES = 1024 * 1024 * 1024
+LEGACY_SIGNED_URL_MAX_AGE = 45.0
 SDK_HELPER_COMMAND = "__aistudio_sdk_download"
 
 AUTH_MARKERS = (
@@ -77,6 +81,10 @@ class PrivateOrUnavailable(ApiError):
 
 class IntegrityError(BatchDownloadError):
     """A downloaded file does not match its remote metadata."""
+
+
+class SignedUrlRefreshRequired(BatchDownloadError):
+    """The current signed file URL should be replaced before it expires."""
 
 
 def utc_now() -> str:
@@ -715,7 +723,156 @@ def probe_file_url(
         return None, None, None
     size_value = response.headers.get("Content-Length")
     size = int(size_value) if size_value and size_value.isdigit() else None
-    return size, remote_md5(response.headers), remote_crc32(response.headers)
+    expected_md5 = remote_md5(response.headers)
+    expected_crc32 = remote_crc32(response.headers)
+    if expected_crc32 is not None:
+        return size, expected_md5, expected_crc32
+
+    try:
+        with session.get(
+            file_url,
+            headers={"Accept-Encoding": "identity", "Range": "bytes=0-0"},
+            stream=True,
+            allow_redirects=True,
+            timeout=(timeout, max(timeout, 120.0)),
+        ) as range_response:
+            if range_response.status_code == 206:
+                content_range = parse_content_range(
+                    range_response.headers.get("Content-Range", "")
+                )
+                if content_range is not None:
+                    range_start, range_end, range_size = content_range
+                    if range_start == 0 and range_end == 0:
+                        size = range_size
+                expected_md5 = expected_md5 or remote_md5(range_response.headers)
+                expected_crc32 = remote_crc32(range_response.headers)
+    except (requests.RequestException, IntegrityError, ValueError):
+        pass
+    return size, expected_md5, expected_crc32
+
+
+def parse_content_range(value: str) -> tuple[int, int, int] | None:
+    match = re.fullmatch(r"bytes (\d+)-(\d+)/(\d+)", value.strip())
+    if not match:
+        return None
+    start, end, size = (int(part) for part in match.groups())
+    if start > end or end >= size:
+        return None
+    return start, end, size
+
+
+def fetch_legacy_range(
+    session: requests.Session,
+    file_url: str,
+    start: int,
+    end: int,
+    expected_size: int,
+    timeout: float,
+) -> bytes:
+    expected_length = end - start + 1
+    headers = {
+        "Accept-Encoding": "identity",
+        "Range": f"bytes={start}-{end}",
+    }
+    with session.get(
+        file_url,
+        headers=headers,
+        stream=True,
+        allow_redirects=True,
+        timeout=(timeout, max(timeout, 120.0)),
+    ) as response:
+        response.raise_for_status()
+        content_range = parse_content_range(response.headers.get("Content-Range", ""))
+        if response.status_code != 206 or content_range != (start, end, expected_size):
+            raise IntegrityError(
+                f"Unexpected range response for bytes {start}-{end}: "
+                f"status={response.status_code}, "
+                f"Content-Range={response.headers.get('Content-Range', '')!r}"
+            )
+        content = bytearray()
+        for chunk in response.iter_content(chunk_size=CHUNK_SIZE):
+            if not chunk:
+                continue
+            content.extend(chunk)
+            if len(content) > expected_length:
+                raise IntegrityError(
+                    f"Range bytes {start}-{end} exceeded {expected_length} bytes"
+                )
+        if len(content) != expected_length:
+            raise IntegrityError(
+                f"Range bytes {start}-{end} returned {len(content)} of "
+                f"{expected_length} bytes"
+            )
+        return bytes(content)
+
+
+def append_parallel_legacy_ranges(
+    session: requests.Session,
+    file_url: str,
+    partial_path: Path,
+    offset: int,
+    expected_size: int,
+    timeout: float,
+    workers: int,
+    filename: str,
+) -> None:
+    started_at = time.monotonic()
+    starting_offset = offset
+    next_progress = min(expected_size, offset + LEGACY_PROGRESS_BYTES)
+    with (
+        concurrent.futures.ThreadPoolExecutor(max_workers=workers) as executor,
+        partial_path.open("ab") as handle,
+    ):
+        while offset < expected_size:
+            ranges: list[tuple[int, int]] = []
+            next_start = offset
+            for _ in range(workers):
+                if next_start >= expected_size:
+                    break
+                end = min(next_start + LEGACY_RANGE_CHUNK_SIZE - 1, expected_size - 1)
+                ranges.append((next_start, end))
+                next_start = end + 1
+
+            futures = [
+                executor.submit(
+                    fetch_legacy_range,
+                    session,
+                    file_url,
+                    start,
+                    end,
+                    expected_size,
+                    timeout,
+                )
+                for start, end in ranges
+            ]
+            try:
+                chunks = [future.result() for future in futures]
+            except Exception:
+                for future in futures:
+                    future.cancel()
+                raise
+
+            for chunk in chunks:
+                handle.write(chunk)
+            handle.flush()
+            offset = ranges[-1][1] + 1
+
+            if offset >= next_progress or offset == expected_size:
+                elapsed = max(time.monotonic() - started_at, 0.001)
+                rate = (offset - starting_offset) / elapsed / (1024 * 1024)
+                log(
+                    "INFO",
+                    f"{filename}: {offset}/{expected_size} bytes "
+                    f"({rate:.1f} MiB/s this run)",
+                )
+                next_progress = min(expected_size, offset + LEGACY_PROGRESS_BYTES)
+            if (
+                offset < expected_size
+                and time.monotonic() - started_at >= LEGACY_SIGNED_URL_MAX_AGE
+            ):
+                os.fsync(handle.fileno())
+                raise SignedUrlRefreshRequired
+        os.fsync(handle.fileno())
 
 
 def verify_file(
@@ -739,6 +896,7 @@ def download_legacy_file(
     file_info: dict[str, Any],
     target_dir: Path,
     file_retries: int,
+    legacy_workers: int = 1,
 ) -> dict[str, Any]:
     file_id = int(file_info["fileId"])
     expected_size = int(file_info.get("fileSize") or 0)
@@ -756,7 +914,9 @@ def download_legacy_file(
     partial_path = target_dir / f"{filename}.part"
 
     last_error: Exception | None = None
-    for attempt in range(file_retries + 1):
+    consecutive_failures = 0
+    while consecutive_failures <= file_retries:
+        attempt_offset = partial_path.stat().st_size if partial_path.exists() else 0
         try:
             file_url = client.fetch_file_url(dataset_id, file_id)
             probed_size, expected_md5, expected_crc32 = probe_file_url(
@@ -790,42 +950,62 @@ def download_legacy_file(
                 log("WARN", f"Moved oversized partial file aside: {moved}")
 
             offset = partial_path.stat().st_size if partial_path.exists() else 0
-            headers = {"Accept-Encoding": "identity"}
-            if offset:
-                headers["Range"] = f"bytes={offset}-"
             log(
                 "INFO",
                 f"Downloading legacy file {filename} from byte {offset} "
-                f"({attempt + 1}/{file_retries + 1})...",
+                f"with {legacy_workers} worker(s) "
+                f"(failure streak {consecutive_failures}/{file_retries + 1})...",
             )
-            with client.session.get(
-                file_url,
-                headers=headers,
-                stream=True,
-                allow_redirects=True,
-                timeout=(client.timeout, max(client.timeout, 120.0)),
-            ) as response:
-                if response.status_code == 416 and offset == expected_size:
-                    pass
-                else:
-                    response.raise_for_status()
-                    append = offset > 0 and response.status_code == 206
-                    if append:
-                        content_range = response.headers.get("Content-Range", "")
-                        if not content_range.startswith(f"bytes {offset}-"):
-                            raise IntegrityError(
-                                f"Unexpected Content-Range for {filename}: {content_range!r}"
+            if legacy_workers > 1 and expected_size > 0:
+                if offset < expected_size:
+                    append_parallel_legacy_ranges(
+                        client.session,
+                        file_url,
+                        partial_path,
+                        offset,
+                        expected_size,
+                        client.timeout,
+                        legacy_workers,
+                        filename,
+                    )
+                elif not partial_path.exists():
+                    partial_path.touch()
+            else:
+                headers = {"Accept-Encoding": "identity"}
+                if offset:
+                    headers["Range"] = f"bytes={offset}-"
+                with client.session.get(
+                    file_url,
+                    headers=headers,
+                    stream=True,
+                    allow_redirects=True,
+                    timeout=(client.timeout, max(client.timeout, 120.0)),
+                ) as response:
+                    if response.status_code == 416 and offset == expected_size:
+                        pass
+                    else:
+                        response.raise_for_status()
+                        append = offset > 0 and response.status_code == 206
+                        if append:
+                            content_range = response.headers.get("Content-Range", "")
+                            if not content_range.startswith(f"bytes {offset}-"):
+                                raise IntegrityError(
+                                    f"Unexpected Content-Range for {filename}: "
+                                    f"{content_range!r}"
+                                )
+                        if offset > 0 and not append:
+                            log(
+                                "WARN",
+                                f"Server ignored Range for {filename}; restarting file.",
                             )
-                    if offset > 0 and not append:
-                        log("WARN", f"Server ignored Range for {filename}; restarting file.")
-                        offset = 0
-                    mode = "ab" if append else "wb"
-                    with partial_path.open(mode) as handle:
-                        for chunk in response.iter_content(chunk_size=CHUNK_SIZE):
-                            if chunk:
-                                handle.write(chunk)
-                        handle.flush()
-                        os.fsync(handle.fileno())
+                            offset = 0
+                        mode = "ab" if append else "wb"
+                        with partial_path.open(mode) as handle:
+                            for chunk in response.iter_content(chunk_size=CHUNK_SIZE):
+                                if chunk:
+                                    handle.write(chunk)
+                            handle.flush()
+                            os.fsync(handle.fileno())
 
             actual_size = partial_path.stat().st_size if partial_path.exists() else 0
             if actual_size != expected_size:
@@ -847,13 +1027,24 @@ def download_legacy_file(
                 "md5": expected_md5,
                 "crc32": expected_crc32,
             }
+        except SignedUrlRefreshRequired:
+            log("INFO", f"Refreshing signed URL for {filename}...")
+            continue
         except (AuthenticationRequired, PrivateOrUnavailable):
             raise
         except (requests.RequestException, ApiError, IntegrityError, OSError) as exc:
             last_error = exc
-            if attempt >= file_retries:
+            current_offset = (
+                partial_path.stat().st_size if partial_path.exists() else 0
+            )
+            status_code = getattr(getattr(exc, "response", None), "status_code", None)
+            if status_code in (401, 403) and current_offset > attempt_offset:
+                log("INFO", f"Signed URL expired for {filename}; refreshing it...")
+                continue
+            if consecutive_failures >= file_retries:
                 break
-            delay = client.retry_delay * (2**attempt)
+            delay = client.retry_delay * (2**consecutive_failures)
+            consecutive_failures += 1
             log("WARN", f"Legacy file {file_id} failed: {exc}; retrying in {delay:g}s")
             time.sleep(delay)
     raise BatchDownloadError(
@@ -964,6 +1155,7 @@ def download_legacy_dataset(
     state: StateStore,
     client: AiStudioClient,
     file_retries: int,
+    legacy_workers: int = 1,
 ) -> str:
     state.record(entry, "running", kind="legacy", target=str(target))
     try:
@@ -1017,6 +1209,7 @@ def download_legacy_dataset(
                     file_info,
                     target,
                     file_retries,
+                    legacy_workers,
                 )
             )
             state.record(
@@ -1077,7 +1270,18 @@ def download_repo_with_legacy_fallback(
     retry_delay: float,
     client: AiStudioClient,
     token: str | None,
+    force_legacy_api: bool = False,
+    legacy_workers: int = 1,
 ) -> str:
+    if force_legacy_api:
+        log(
+            "INFO",
+            f"Using the dataset file API for Git dataset {entry.dataset_id}.",
+        )
+        return download_legacy_dataset(
+            entry, target, state, client, retries, legacy_workers
+        )
+
     result = download_repo_dataset(
         entry,
         target,
@@ -1095,7 +1299,7 @@ def download_repo_with_legacy_fallback(
         f"Git download failed for dataset {entry.dataset_id}; "
         "trying the dataset file API.",
     )
-    return download_legacy_dataset(entry, target, state, client, retries)
+    return download_legacy_dataset(entry, target, state, client, retries, legacy_workers)
 
 
 def save_catalog(path: Path, catalog: Catalog, args: argparse.Namespace) -> None:
@@ -1270,6 +1474,15 @@ def parse_args(argv: Sequence[str] | None = None) -> argparse.Namespace:
         help="Value passed to aistudio download --max-workers (default: 3).",
     )
     parser.add_argument(
+        "--legacy-workers",
+        type=int,
+        default=1,
+        help=(
+            "Concurrent byte-range workers for the dataset file API "
+            "(default: 1)."
+        ),
+    )
+    parser.add_argument(
         "--retries", type=int, default=2, help="Retries after a failed request/download."
     )
     parser.add_argument("--retry-delay", type=float, default=2.0)
@@ -1278,6 +1491,14 @@ def parse_args(argv: Sequence[str] | None = None) -> argparse.Namespace:
         "--repo-only",
         action="store_true",
         help="Skip legacy numeric dataset IDs and only run aistudio download commands.",
+    )
+    parser.add_argument(
+        "--force-legacy-api",
+        action="store_true",
+        help=(
+            "Use the dataset file API for Git-backed datasets while retaining their "
+            "owner/repository target directories."
+        ),
     )
     parser.add_argument(
         "--list-only",
@@ -1318,6 +1539,8 @@ def parse_args(argv: Sequence[str] | None = None) -> argparse.Namespace:
         parser.error("--max-datasets must be positive")
     if args.sdk_workers <= 0:
         parser.error("--sdk-workers must be positive")
+    if args.legacy_workers <= 0:
+        parser.error("--legacy-workers must be positive")
     if args.retries < 0:
         parser.error("--retries cannot be negative")
     if args.retry_delay < 0 or args.timeout <= 0:
@@ -1445,6 +1668,8 @@ def main(argv: Sequence[str] | None = None) -> int:
                     args.retry_delay,
                     client,
                     token,
+                    args.force_legacy_api,
+                    args.legacy_workers,
                 )
             elif args.repo_only:
                 state.record(
@@ -1470,7 +1695,12 @@ def main(argv: Sequence[str] | None = None) -> int:
                     f"[{index}/{len(entries)}] Legacy dataset {entry.dataset_id} -> {target}",
                 )
                 result = download_legacy_dataset(
-                    entry, target, state, client, args.retries
+                    entry,
+                    target,
+                    state,
+                    client,
+                    args.retries,
+                    args.legacy_workers,
                 )
             counts[result] = counts.get(result, 0) + 1
 
