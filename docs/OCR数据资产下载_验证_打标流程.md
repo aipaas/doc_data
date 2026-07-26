@@ -4,7 +4,7 @@
 
 ## 一、开始前确认
 
-1. 以用户最新的 `/Users/guofengjiao/Documents/文档解析数据集核心资产统计.xlsx` 为唯一当前名录。每次记录修改时间、SHA-256、sheet、表头和最大行号。
+1. 以 `$OCR_DATA_WORKSPACE/文档解析数据集核心资产统计.xlsx` 为唯一当前名录。每次记录修改时间、SHA-256、sheet、表头和最大行号。
 2. 读取 `注意事项/来源.png`、`类型.png`、`状态.png`、`可用性.png`。来源和类型是多选，状态和可用性是单选，不自行创造选项。
 3. 现场检查 `/Volumes`，当前团队数据盘逻辑集合为 `modelscope1`、`shareData0`、`shareData1`、`shareData2`、`shareData3`。逻辑名称不等于实际挂载目录，K 列必须写实际存在的路径。
 4. `shareData1/supportData` 是国内客服附件文档，不是运维资料。
