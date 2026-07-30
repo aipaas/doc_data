@@ -2,6 +2,8 @@
 
 > 抓取日期：2026-07-23。来源：[ModelScope 筛选页](https://www.modelscope.cn/datasets?Tags=image-to-text&dataType=image&page=1)；[AnyOCR 合集](https://www.modelscope.cn/collections/AnyOCR-4987429313b046)。
 
+> 核验边界：本报告混合了平台元数据、文件树和已落盘资产结论，必须按每条备注区分，不能把 README/schema 核验表述成样本验证。统一证据、输入/标签、多页和可用性口径见 [`../docs/文档OCR数据集筛选评测与核验标准.md`](../docs/文档OCR数据集筛选评测与核验标准.md)。
+
 ## 口径与结论
 
 - 当前筛选接口返回 **108 个**数据集；AnyOCR 合集含 **17 个**数据集，其中原报告已有 4 个，本次新增 **13 个必下项**。与筛选结果去重后共分析 **122 个**（补充 14 个）。

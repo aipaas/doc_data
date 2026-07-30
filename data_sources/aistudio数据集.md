@@ -2,6 +2,8 @@
 
 > 抓取与渲染日期：2026-07-21。来源：[AI Studio OCR 数据集目录](https://aistudio.baidu.com/datasetoverview?orderType=1&task=26)。详情缓存：`.aistudio_ocr_cache.json`；机器决策：`.aistudio-ocr-decisions.json`。
 
+> 核验边界：本报告主要基于平台详情、文件清单和许可元数据，不等同于逐条打开 payload。统一证据、输入/标签、多页和可用性口径见 [`../docs/文档OCR数据集筛选评测与核验标准.md`](../docs/文档OCR数据集筛选评测与核验标准.md)。报告中的 A/B/C/D 是下载决策，不替代最终可用性；最终无标签记录只写具体输入，可用性冲突按 `仅评测 > 缺label > 需处理`。
+
 ## 决策口径
 
 - 完整抓取 **857 个**公开条目的详情、文件清单、平台许可和热度；详情接口标称文件合计 **2.34 TiB**。当前本地已完整下载 **99 个**。

@@ -1,4 +1,5 @@
 import hashlib
+import os
 import tempfile
 import time
 import unittest
@@ -54,6 +55,7 @@ class DownloaderTests(unittest.TestCase):
         self.assertIsNone(warning)
         return manifest
 
+    @unittest.skipUnless(os.name == "nt", "requires Windows path semantics")
     def test_explicit_windows_data_root_builds_repository_directory(self) -> None:
         destination = default_local_dir(
             "kensho/PubTables-v2", Path(r"E:\data\doc")
@@ -64,6 +66,7 @@ class DownloaderTests(unittest.TestCase):
             Path(r"E:\data\doc\huggingface\kensho\PubTables-v2"),
         )
 
+    @unittest.skipUnless(os.name == "nt", "requires Windows path semantics")
     def test_environment_data_root_builds_repository_directory(self) -> None:
         with patch.dict("os.environ", {"HF_MIRROR_DATA_ROOT": r"E:\data\doc"}):
             destination = default_local_dir("juliozhao/DocSynth300K")

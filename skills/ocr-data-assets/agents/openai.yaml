@@ -1,0 +1,6 @@
+interface:
+  display_name: "OCR Data Assets"
+  short_description: "Acquire, verify, and reassess OCR data assets"
+  default_prompt: "Use $ocr-data-assets to acquire, verify, and update an OCR or document dataset inventory with evidence-bounded conclusions."
+policy:
+  allow_implicit_invocation: true

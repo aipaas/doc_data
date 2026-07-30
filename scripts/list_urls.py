@@ -1,35 +1,64 @@
+#!/usr/bin/env python3
+"""Export mirror download URLs for one Hugging Face dataset repository."""
+
+from __future__ import annotations
+
+import argparse
+import os
+from collections import defaultdict
+from pathlib import Path
+from urllib.parse import quote
+
 from huggingface_hub import HfApi
 
-# 1. 创建HfApi实例，指定镜像站和token
-api = HfApi(endpoint="https://hf-mirror.com", token="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")
 
-repo_id="ServiceNow/BigDocs-7.5M"
+def parse_args() -> argparse.Namespace:
+    parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument("repo_id", help="Dataset repository ID, for example owner/name.")
+    parser.add_argument("--revision", default="main", help="Branch, tag, or commit.")
+    parser.add_argument(
+        "--endpoint",
+        default="https://hf-mirror.com",
+        help="Hugging Face-compatible API endpoint.",
+    )
+    parser.add_argument(
+        "--output",
+        type=Path,
+        default=Path("download_urls.txt"),
+        help="Output text file (default: ./download_urls.txt).",
+    )
+    return parser.parse_args()
 
-# 2. 获取数据集所有文件路径
-files = api.list_repo_files(
-    repo_id=repo_id,
-    repo_type="dataset"  # 必须指定为dataset
-)
 
-# 3. 生成完整的下载URL并保存，按子路径（目录）分组输出，同一子路径的 url 会排在一起
-from collections import defaultdict
+def main() -> None:
+    args = parse_args()
+    endpoint = args.endpoint.rstrip("/")
+    api = HfApi(endpoint=endpoint, token=os.environ.get("HF_TOKEN") or None)
+    files = api.list_repo_files(
+        repo_id=args.repo_id,
+        repo_type="dataset",
+        revision=args.revision,
+    )
 
-base_url = "https://hf-mirror.com"
+    groups: dict[str, list[str]] = defaultdict(list)
+    for file_path in files:
+        directory = file_path.rsplit("/", 1)[0] if "/" in file_path else ""
+        groups[directory].append(file_path)
 
-# 将文件按目录分组
-groups = defaultdict(list)
-for file in files:
-    if "/" in file:
-        dirpath = file.rsplit("/", 1)[0]
-    else:
-        dirpath = ""  # 根目录
-    groups[dirpath].append(file)
+    args.output.parent.mkdir(parents=True, exist_ok=True)
+    repo_path = quote(args.repo_id, safe="/")
+    revision_path = quote(args.revision, safe="")
+    with args.output.open("w", encoding="utf-8") as handle:
+        for directory in sorted(groups):
+            for file_path in sorted(groups[directory]):
+                encoded_path = quote(file_path, safe="/")
+                handle.write(
+                    f"{endpoint}/datasets/{repo_path}/resolve/"
+                    f"{revision_path}/{encoded_path}\n"
+                )
 
-with open("download_urls.txt", "w", encoding="utf-8") as f:
-    # 按目录排序，目录内按文件名排序，保证同一子路径的 url 连续输出
-    for dirpath in sorted(groups.keys()):
-        for file in sorted(groups[dirpath]):
-            f.write(f"{base_url}/{repo_id}/{file}\n")
+    print(f"Exported {len(files)} URLs to {args.output}")
 
-total = sum(len(v) for v in groups.values())
-print(f"✅ 成功导出 {total} 个文件的下载链接到 download_urls.txt（按子路径分组）")
+
+if __name__ == "__main__":
+    main()

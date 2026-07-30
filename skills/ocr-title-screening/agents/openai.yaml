@@ -1,0 +1,4 @@
+interface:
+  display_name: "OCR Title Screening"
+  short_description: "Screen datasets for multi-page title correction"
+  default_prompt: "Use $ocr-title-screening to classify document datasets for multi-page title correction and produce evidence-backed inventory rows."
