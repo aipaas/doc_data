@@ -61,6 +61,8 @@ For every undownloaded correction, state `未下载` plus the exact evidence cla
 
 Fill every field. Never emit `待核验`, `未知`, `待确认`, `待验证`, an empty string, or a placeholder.
 
+Classify usability, physical multi-page status, and title-correction relevance independently. Usability measures readiness and processing cost; multi-page status measures physical page grouping; relevance measures how directly the paired evidence supervises title correction. Never derive one field solely from another.
+
 ### Input And Label
 
 Use one field, not separate input/output columns.
@@ -85,10 +87,10 @@ Use the project's controlled vocabulary when one is supplied. Otherwise use this
 
 Choose exactly one:
 
-- `可用`: accessible, paired input and target directly support evaluation or training.
+- `可用`: necessary assets are accessible and paired input/target support the current evaluation or training task without manual inference, cross-source joins, or task reconstruction.
 - `仅评测`: official purpose, split, or release boundary limits the asset to benchmark/test use.
 - `缺label`: a representative sample or reliable schema is readable and confirms concrete input but no paired target.
-- `需处理`: paired evidence exists but conversion, regrouping, OCR alignment, archive extraction, page reconstruction, or task adaptation is needed.
+- `需处理`: paired evidence exists but deterministic label extraction, conversion, regrouping, OCR alignment, archive extraction, page reconstruction, or task adaptation is needed.
 - `暂时不可用`: after an actual local, preferred-mirror, or official-source sample attempt, permission, password, mounting, corruption, dead links, or transport still blocks the necessary asset.
 - `非数据集`: a search/index/tool/model repository or isolated examples rather than a standalone dataset.
 
@@ -104,12 +106,32 @@ Choose `❌` for independent page images, ordinary XML/HTML/JSONL containers, sc
 
 Choose exactly one of `高`, `中`, `低`, or `不相关` and write a dataset-specific reason.
 
-- `高`: provides multi-page document content plus title/heading/hierarchy/reading-order/Markdown structure that can supervise or directly evaluate title correction.
-- `中`: supports prerequisite OCR, layout, reading order, or document grouping, but title boundaries/text need derivation or conversion.
-- `低`: only indirect domain, visual, OCR, or QA value; substantial adaptation is required.
-- `不相关`: lacks a credible path to multi-page document OCR title correction.
+- Apply an identity gate first: when `availability=非数据集`, set relevance to `不相关`. Indexes, portals without a released corpus, model/tool repositories, schema-less collections, and isolated fixtures do not become relevant datasets merely because their descriptions mention documents.
+- Require a pairing between title evidence and an OCR-addressable carrier: a page image, PDF, reproducible page render, page-level OCR output, or ordered page images. A standalone title list, metadata record, or XML/HTML structure without a page/render mapping cannot be `高`; it is at most `中` when rendering, joining, or alignment can construct that mapping. Require an official schema with explicit paired fields or an inspected representative/full sample for `高`; description-only evidence is at most `中`.
+- `高`: paired OCR-addressable evidence directly identifies a document title or chapter/section heading through text, a title/heading role and region, heading level or parent-child relation, Markdown `#` syntax, HTML `h1-h6`, or a table-of-contents mapping. Deterministic filtering must form the target without first inferring which span is a heading.
+- `中`: no title-specific label exists but complete page/document context plus OCR text, generic layout boxes, reading order, document grouping, ordered pages, or raw physical documents supports candidate or pseudo-label construction; or structured headings exist but still require rendering/joining to an OCR input. Heading identity, boundary, corrected text, or input alignment still requires heuristic, model, human inference, or cross-source processing.
+- `低`: only indirect transfer remains, such as table/formula labels, KIE or form fields, DocVQA, scene/crop OCR, generic single-page OCR, or domain text without paired document-title supervision.
+- `不相关`: the row is not an independent dataset or lacks a credible construction path.
 
-Name the actual schema, annotation, page organization, and limitation in the reason. Avoid generic phrases such as “可用于标题修正” or one template repeated across datasets.
+Count document titles, chapter/section headings, heading roles, heading text/boxes, hierarchy, and TOC mappings as direct title signals. Do not count page headers/footers, table headers or captions, figure/chart titles, form field names, KIE `HEADER`/`QUESTION`, QA answers, plain OCR text, or generic Markdown/HTML without heading syntax as document-heading supervision.
+
+Physical multi-page evidence is not a gate for `高`. A single-page dataset with direct heading supervision may be `高` while `multipage=❌`; it supports the title subtask but is excluded when a report separately filters a multi-page core pool. Conversely, multi-page input without direct title labels is not automatically `高`.
+
+Programmatically generated, weak, or official structural labels may still be directly relevant. Record their provenance and quality boundary; reflect required extraction or quality work in usability instead of automatically downgrading relevance.
+
+Name all four facts in the reason: the direct title label or missing signal, physical page-order evidence, required transformation, and label provenance (`human`, `official_structure`, `programmatic`, or `weak`). Avoid generic phrases such as “可用于标题修正”, “has Markdown”, or one template repeated across datasets.
+
+### Core-Pool Reporting
+
+Report the field-derived candidate pool separately from the evidence-qualified core pool:
+
+- `C0 = multipage=✅ AND relation in {高, 中} AND availability != 非数据集`.
+- `C1 = C0` plus explicit page-order evidence and an independent fixed release or frozen snapshot/batch. Use `C1` as the acquisition-coverage denominator.
+- Split `C1` into direct multi-page supervision (`relation=高`) and raw/pseudo-label material (`relation=中`).
+- Keep `multipage=❌ AND relation=高` in a single-page title-support pool, not the multi-page core.
+- Keep unbounded portals, name lists, schema-less composites, and source pointers outside `C1` until a reproducible boundary is frozen.
+
+Report row count, known-family-deduplicated count, and actual document/page volume separately. Deduplicate aliases, mirrors, explicit subsets, and direct derivatives for raw-source coverage while retaining distinct label products for processing workload. Apply any `高=2, 中=1` score only inside `C1` and describe it as a planning weight, never as data volume, label quality, or model benefit.
 
 ## Difficult Entries
 
@@ -155,6 +177,11 @@ Both preserve the active inventory schema, one dataset per row. Never add an und
 - Confirm every data type is from the fixed nine-option list and original populated types were reused.
 - Recheck every `availability=缺label` row against known public annotation formats.
 - Recheck every multi-page `✅` for physical-document or explicit page-order evidence.
+- Recheck every `relation=高` for a named direct title signal; do not require or infer multi-page status from relevance.
+- Reject page/table/form headers, captions, QA, KIE, and generic OCR as direct document-heading supervision.
+- Confirm every `availability=非数据集` row has `relation=不相关`.
+- Confirm usability, multi-page status, and relevance were each supported independently.
+- Report `C0` and `C1` separately and keep unfrozen sources out of the coverage denominator.
 - Detect repeated/template reasons and replace them with dataset-specific evidence.
 - Confirm difficult rows remain present with explicit conclusions.
 - Confirm temporary validation data has been removed and durable downloaded assets were untouched.

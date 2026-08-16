@@ -61,6 +61,16 @@ python scripts/hf_mirror_downloader.py owner/dataset \
 python scripts/list_urls.py owner/dataset \
   --revision main --output download_urls.txt
 
+# 从指定本地工作簿和挂载盘生成资产表；--volume 可重复
+python scripts/aistudio_asset_table.py \
+  --workbook /path/to/文档解析数据集核心资产统计.xlsx \
+  --volume /Volumes/aistudio1 \
+  --volume /Volumes/shareData6 \
+  --output /tmp/aistudio资产表_全字段.tsv
+
+# 默认只写相对挂载点的存储路径；本机排查时才显式添加：
+# --absolute-storage-paths
+
 # 对已有 ModelScope 目录做只读审计
 python scripts/modelscope_download_audit.py \
   --root /mnt/data/modelscope --json
@@ -114,7 +124,7 @@ Use $ocr-data-assets to download selected rows from ./inventory.tsv into /mnt/da
 ## 文档与测试
 
 - [文档 OCR 数据集筛选、下载与核验标准](docs/文档OCR数据集筛选评测与核验标准.md)：项目 16 字段、证据层级、下载完整性、多页和标题关联口径。
-- [文档 OCR 标题修复数据采集进度](docs/文档OCR标题修复_完整下载分析与执行队列_20260729.md)：基于 2026-07-30 私有资产表快照的进度、价值评估和后续队列；原 XLSX 与 TSV 不在仓库中。
+- [文档 OCR 标题修复数据采集进度](docs/文档OCR标题修复_完整下载分析与执行队列_20260729.md)：基于 2026-07-30 私有资产表快照的进度、价值评估和后续队列；原 XLSX 与包含本机路径的原始 TSV 不在仓库中，可提交的快照应使用生成脚本的默认相对存储路径。
 
 安装测试依赖后运行：
 
